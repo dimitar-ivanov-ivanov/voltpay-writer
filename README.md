@@ -10,7 +10,7 @@ This means that the Writer does NOT wait for the Reader to persist the changes, 
 There is an idempotency check every time we try to process a message to ensure we don't reprocessed already processed messages.
 The reprocessing can happen because of rebalancing, restarts, retries etc.
 There is an idempotency job that deletes idempotency records older than one week.
-After retrieval of messages in the service IF possible commit them to the DB in batches (10-20-50 TBD)
+Kafka consumer should consume messages in batches and IF there are messages for one account those can be commited at the same time OR in batches (10-20-50 TBD)
 After successful write publish to payment_email topic which will be consumed by payment email service and it will
 send emails to the customer that made the succesful payment.
 
@@ -22,6 +22,7 @@ send emails to the customer that made the succesful payment.
   - The topic has 100 partitions with 2 replicas and 1 day retention
   - There are 5 Kafka brokers to ensure more throughput
   - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions
+  - Consumer should Batch consumer and take messages in batches
 
 # Database 
   - PostgreSQL is the chosen DB for it reliability and flexibilty.
