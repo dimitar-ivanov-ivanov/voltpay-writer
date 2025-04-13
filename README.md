@@ -15,7 +15,7 @@ After successful write publish to payment_email topic which will be consumed by 
 send emails to the customer that made the succesful payment.
 
 # Architecture
-![img_1.png](img_1.png)
+![img_2.png](img_2.png)
 # Kafka 
   - Consume messages from payment_writer_topic.
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
@@ -57,6 +57,21 @@ send emails to the customer that made the succesful payment.
 # Other ideas that we considered
 
 1. Use trigger to persist data to reader table
-  - dada
-2. dadada
-  - da
+  - If the trigger fails → the whole write rolls back 
+  - The trigger is persisting in the read table records one by one, consumer for reads can commit in batches 
+  - having a consumer is more flexible, we can choose in the future to commit the data to another storage i.e to a separate database just for reading 
+  - monitoring a trigger behavior is a big question mark ??
+  - for the consumer we can rely on Kafka retries if the trigger fails once it will have to go to a Dead Letter Table 
+
+# How to Set up Locally
+
+# Kafka 
+ - As mentioned we need to create 5 Brokers and 1 Topic for writing with 100 partitions
+ - The other topics will be created by the Apps that will use them 
+ - [START] docker compose up -d
+ - [TOPIC CREATION] docker exec -it kafka1 kafka-topics --create --topic payment-writer --bootstrap-server localhost:9092,kafka2:9092,kafka3:9092,kafka4:9092,kafka5:9092 --partitions 100 --replication-factor 2 
+ - [TOPIC DELETION] docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092
+ - [END] docker compose down 
+
+# PostgreSQL
+ - docker compose up -d
