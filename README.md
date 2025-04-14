@@ -12,7 +12,8 @@ The reprocessing can happen because of rebalancing, restarts, retries etc.
 There is an idempotency job that deletes idempotency records older than one week.
 Kafka consumer should consume messages in batches and IF there are messages for one account those can be commited at the same time OR in batches (10-20-50 TBD)
 After successful write publish to payment_email topic which will be consumed by payment email service and it will
-send emails to the customer that made the succesful payment.
+send emails to the customer that made the succesful payment. The IDs for the payments will be ULIDS instead of UUID 
+because ULIDS are still unique, can be converted to timestamp to see when they were created, can be sorted lexicographically and are better for partitioning.
 
 # Architecture
 ![img_2.png](img_2.png)
@@ -75,3 +76,6 @@ send emails to the customer that made the succesful payment.
 
 # PostgreSQL
  - docker compose up -d
+ - add liquibase dependencies/plugin to build.gradle
+ - gradle build --refresh-dependencies
+ - gradle update - to trigger liquibase scripts
