@@ -13,7 +13,10 @@ There is an idempotency job that deletes idempotency records older than one week
 Kafka consumer should consume messages in batches and IF there are messages for one account those can be commited at the same time OR in batches (10-20-50 TBD)
 After successful write publish to payment_email topic which will be consumed by payment email service and it will
 send emails to the customer that made the succesful payment. The IDs for the payments will be ULIDS instead of UUID 
-because ULIDS are still unique, can be converted to timestamp to see when they were created, can be sorted lexicographically and are better for partitioning.
+because ULIDS are still unique, can be converted to timestamp to see when they were created, can be sorted lexicographically and are better for indexing.
+Another benefit of the ULID is faster indexing, which is useless here as I don't intent to have any indexes, because they'll slow down the writes.
+So, overall I'll use ULIDs here even though they don't have benefit for writes, but they have a lot of benefits for reads, because of the better index performance.
+
 
 # Architecture
 ![img_2.png](img_2.png)
@@ -22,7 +25,7 @@ because ULIDS are still unique, can be converted to timestamp to see when they w
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
   - The topic has 100 partitions with 2 replicas and 1 day retention
   - There are 5 Kafka brokers to ensure more throughput
-  - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions
+  - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions as all of the messages for that ACCOUND_ID go into one partition and processing for a single partition is sequential.
   - Consumer should Batch consumer and take messages in batches
 
 # Database 
@@ -58,11 +61,14 @@ because ULIDS are still unique, can be converted to timestamp to see when they w
 # Other ideas that we considered
 
 1. Use trigger to persist data to reader table
-  - If the trigger fails → the whole write rolls back 
   - The trigger is persisting in the read table records one by one, consumer for reads can commit in batches 
   - having a consumer is more flexible, we can choose in the future to commit the data to another storage i.e to a separate database just for reading 
-  - monitoring a trigger behavior is a big question mark ??
-  - for the consumer we can rely on Kafka retries if the trigger fails once it will have to go to a Dead Letter Table 
+  - monitoring a trigger behavior is a big question mark ?? However monitoring a Java Consumer for Kafka is much more straight-forward
+  - also I don't know how to test the trigger, but I do know how to write a unit/integartion test for Kafka consumer written in Java.
+  - for the consumer we can rely on Kafka retries(3 by default) if the trigger fails once it will have to go to a Dead Letter Table (not bad but you have more dependency on the DB instead of Kafka)
+2. Use UUID for Write DB and ULID for READ DB 
+  - I dropped this because I'll have to do some magic converstions which will slow down the system 
+  - Better to use ULIDs because even though they have no benefit for Write they have benefit for Read and the IDs for records are the same in both systems 
 
 # How to Set up Locally
 
