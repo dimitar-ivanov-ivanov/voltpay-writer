@@ -12,11 +12,7 @@ The reprocessing can happen because of rebalancing, restarts, retries etc.
 There is an idempotency job that deletes idempotency records older than one week.
 Kafka consumer should consume messages in batches and IF there are messages for one account those can be commited at the same time OR in batches (10-20-50 TBD)
 After successful write publish to payment_email topic which will be consumed by payment email service and it will
-send emails to the customer that made the succesful payment. The IDs for the payments will be ULIDS instead of UUID 
-because ULIDS are still unique, can be converted to timestamp to see when they were created, can be sorted lexicographically and are better for indexing.
-Another benefit of the ULID is faster indexing, which is useless here as I don't intent to have any indexes, because they'll slow down the writes.
-So, overall I'll use ULIDs here even though they don't have benefit for writes, but they have a lot of benefits for reads, because of the better index performance.
-
+send emails to the customer that made the succesful payment.
 
 # Architecture
 ![img_2.png](img_2.png)
@@ -31,10 +27,18 @@ So, overall I'll use ULIDs here even though they don't have benefit for writes, 
 # Database 
   - PostgreSQL is the chosen DB for it reliability and flexibilty.
   - We want our DB schema to be normalized as possible.
-  - This allows us to not have contention when writing because we are writing to many tables at once.
-  - Idempotency table consists for Message_ID, DATE
-  - NO INDEXES on the main WRITER tables! Each index slows down updates and could slow down create significantly, rebalncing an index is costly.
-  - CONSIDER WHETHER IT WILL BETTER TO PARTITION WRITER TABLES ??
+  - This allows us to not have contention on row level when writing because we are writing to many tables at once.
+  - Idempotency table consists of Message_ID, DATE
+  - NO INDEXES on the main WRITER tables besides Primary Key! Each index slows down updates and could slow down create significantly, rebalancing an index is costly.
+  - This makes it possible to insert two records for ID X in metadata and notes, the app will have to ensure that doesn't happen.
+  - The IDs for the payments will be ULIDS instead of UUID
+    because ULIDS are still unique, can be converted to timestamp to see when they were created, can be sorted lexicographically and are better for indexing
+  - ULID generation will be done in the app, there is an astronomically low chance to create the same ULID twice, this case will be handled 
+  - I'd rather avoid a DB bottleneck for the ULID generation in the DB, also generating it in the app is more flexible as in the future we can choose to write it to another storage
+  - Why collison could happen: ULID = 48 bits of timestamp + 80 bits of randomness the odds of a collision happening is 2^80 (1 in 1.2 quintillion)
+  - NO FOREIGN KEY constraints between the tables, it's more optimal to keep things loose and ensure on app level that ID for the records is consistent in the different tables.
+  - Tables to be PARTITIONED, it will reduce contention on the same table and distributed writes to different tables (partitions)
+  - TODO: Think whether we should partition by CREATED_AT, so it will be by MONTH, DAY, or even Hourly
    
 # Liquibase
   - The chosen approach for version control of the database 
@@ -58,17 +62,24 @@ So, overall I'll use ULIDs here even though they don't have benefit for writes, 
   - DB slow queries 
   - Out of memory errors
 
-# Other ideas that we considered
+# Other ideas that we considered and DROPPED
 
-1. Use trigger to persist data to reader table
+1. **Use trigger to persist data to reader table**
   - The trigger is persisting in the read table records one by one, consumer for reads can commit in batches 
   - having a consumer is more flexible, we can choose in the future to commit the data to another storage i.e to a separate database just for reading 
   - monitoring a trigger behavior is a big question mark ?? However monitoring a Java Consumer for Kafka is much more straight-forward
-  - also I don't know how to test the trigger, but I do know how to write a unit/integartion test for Kafka consumer written in Java.
+  - also I don't know how to test the trigger, but I do know how to write a unit/integration test for Kafka consumer written in Java.
   - for the consumer we can rely on Kafka retries(3 by default) if the trigger fails once it will have to go to a Dead Letter Table (not bad but you have more dependency on the DB instead of Kafka)
-2. Use UUID for Write DB and ULID for READ DB 
+2. **Use UUID for Write DB and ULID for READ DB**
+  - Initially the idea was that we don't need indexes which greatly benefit from ULID and we can just use UUID, but then use ULIDs for READs for faster index node insertion.
   - I dropped this because I'll have to do some magic converstions which will slow down the system 
-  - Better to use ULIDs because even though they have no benefit for Write they have benefit for Read and the IDs for records are the same in both systems 
+  - Better to use ULIDs because even though they have no benefit for Write they have benefit for Read and the IDs for records are the same in both systems so no mappings needed
+3. **Remove the index on PRIMARY KEY on "payment_core" table to speed up writes** 
+  - Ultimately I decided against this, because we will use ULID for the ID which shows good performance for the writes i.e there isn't that much rebalancing of the index and also this index will be beneficial for updates
+4. **Generate ULID in the DB using https://github.com/andrielfn/pg-ulid.git**
+  - Ultimately I decided to generate it on app level 
+  - I already have a created_at column and I don't see perfect ULID sort order
+  - I'd rather avoid a DB bottleneck for the ULID generation in the DB, also generating it in the app is more flexible as in the future we can choose to write it to another storage
 
 # How to Set up Locally
 
