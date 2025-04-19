@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: src/main/resources/db/changelogs/changelog-1.0.sql
+  - include:
+      file: src/main/resources/db/changelogs/changelog-1.1.sql

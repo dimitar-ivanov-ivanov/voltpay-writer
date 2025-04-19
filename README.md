@@ -38,7 +38,8 @@ send emails to the customer that made the succesful payment.
   - Why collison could happen: ULID = 48 bits of timestamp + 80 bits of randomness the odds of a collision happening is 2^80 (1 in 1.2 quintillion)
   - NO FOREIGN KEY constraints between the tables, it's more optimal to keep things loose and ensure on app level that ID for the records is consistent in the different tables.
   - Tables to be PARTITIONED, it will reduce contention on the same table and distributed writes to different tables (partitions)
-  - TODO: Think whether we should partition by CREATED_AT, so it will be by MONTH, DAY, or even Hourly
+  - Tables to be partitioned on a MONTHLY basis by CREATED_AT
+  - pgpartman(https://github.com/pgpartman/pg_partman) extension will be used to created and manage partitions, new partitions for the 2 months will be created at the start of every month
    
 # Liquibase
   - The chosen approach for version control of the database 
@@ -62,7 +63,7 @@ send emails to the customer that made the succesful payment.
   - DB slow queries 
   - Out of memory errors
 
-# Other ideas that we considered and DROPPED
+# Other ideas that were considered and DROPPED
 
 1. **Use trigger to persist data to reader table**
   - The trigger is persisting in the read table records one by one, consumer for reads can commit in batches 
@@ -80,6 +81,11 @@ send emails to the customer that made the succesful payment.
   - Ultimately I decided to generate it on app level 
   - I already have a created_at column and I don't see perfect ULID sort order
   - I'd rather avoid a DB bottleneck for the ULID generation in the DB, also generating it in the app is more flexible as in the future we can choose to write it to another storage
+5. **Use Hash based partitioning for tables**
+  - I wanted to use this initially because partitioning by months, days, hours seemed like it would lead to too many partitions 
+  - problem with hash based partitioning is that when you declare how many partitions you want you can't increase them and repartition the data 
+  - I'll have to manually repartition so make a new table with more partitions, start writing to it, migrate the data to it, route client to the new table and then delete the old table.
+  - that seemed like too much maitenance work so I dropped this idea.
 
 # How to Set up Locally
 
@@ -95,4 +101,17 @@ send emails to the customer that made the succesful payment.
  - docker compose up -d
  - add liquibase dependencies/plugin to build.gradle
  - gradle build --refresh-dependencies
- - gradle update - to trigger liquibase scripts
+ - gradle update OR gradle clearChecksums update(if there is a problem with checksums) - to trigger liquibase scripts
+ - docker exec it postgres bash
+ - apt-get update
+ - [PARTMAN] apt-get install postgresql-16-partman
+ - apt-get install git
+ - apt-get install make
+ - apt-get install -y gcc make postgresql-server-dev-16 libxml2-dev
+ - git clone https://github.com/pgpartman/pg_partman.git
+ - cd pg_partman
+ - make 
+ - make install
+ - `SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';` to verify
+ - [CONNECT TO DB] psql -U user -d write_db
+
