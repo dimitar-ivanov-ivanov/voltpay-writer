@@ -38,7 +38,8 @@ send emails to the customer that made the succesful payment.
   - Why collison could happen: ULID = 48 bits of timestamp + 80 bits of randomness the odds of a collision happening is 2^80 (1 in 1.2 quintillion)
   - NO FOREIGN KEY constraints between the tables, it's more optimal to keep things loose and ensure on app level that ID for the records is consistent in the different tables.
   - Tables to be PARTITIONED, it will reduce contention on the same table and distributed writes to different tables (partitions)
-  - Tables to be partitioned on a MONTHLY basis by CREATED_AT
+  - Tables to be partitioned on a MONTHLY basis by CREATED_AT column
+  - One downside of partitioning is that the PRIMARY KEY has to also include CREATED_AT column to ensure uniqueness across partitions, making the index bigger
   - pgpartman(https://github.com/pgpartman/pg_partman) extension will be used to created and manage partitions, new partitions for the 2 months will be created at the start of every month
    
 # Liquibase
@@ -46,6 +47,14 @@ send emails to the customer that made the succesful payment.
   - Easy to use and we have rollbacks it necessary 
   - We have an audit trail
   - It's easy to integrate in the CI/CD and it ensures consistent DB changes across all environments
+  - Liquibase doesn't directly support schema creation or the management of extensions so they have to be done manually 
+  - otherwise liquibase will throw exception for not existing schema when you execute the scripts, schema CANNOT be created in liquibase
+  - ChangeSet Ids to be order ascendingly from file to file, if file 1 ends at changeset 3, file 2 needs to start from change 4 to ensure that when querying databasechangelog we can easily track the change
+  - commands
+     - ``gradle update`` -> apply changes
+     - ``gradle clearChecksums update`` -> if you change a changelog already execute it will throw an exception when you reexecute it   
+     - ``gradle rollbackCount -PliquibaseCommandValue=1`` -> very important for rolling back ONE change
+     - ``SELECT * FROM databasechangelog ORDER BY dateexecuted DESC;`` -> to monitor when a change was executed
 
 # Monitoring - TODO
   - TBD but most likely 
@@ -92,26 +101,34 @@ send emails to the customer that made the succesful payment.
 # Kafka 
  - As mentioned we need to create 5 Brokers and 1 Topic for writing with 100 partitions
  - The other topics will be created by the Apps that will use them 
- - [START] docker compose up -d
- - [TOPIC CREATION] docker exec -it kafka1 kafka-topics --create --topic payment-writer --bootstrap-server localhost:9092,kafka2:9092,kafka3:9092,kafka4:9092,kafka5:9092 --partitions 100 --replication-factor 2 
- - [TOPIC DELETION] docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092
- - [END] docker compose down 
+ - [START] ``docker compose up -d``
+ - [TOPIC CREATION] ``docker exec -it kafka1 kafka-topics --create --topic payment-writer --bootstrap-server localhost:9092,kafka2:9092,kafka3:9092,kafka4:9092,kafka5:9092 --partitions 100 --replication-factor 2``
+ - [TOPIC DELETION] ``docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092``
+ - [END] ``docker compose down``
 
 # PostgreSQL
- - docker compose up -d
+ - ``docker compose up -d``
  - add liquibase dependencies/plugin to build.gradle
- - gradle build --refresh-dependencies
- - gradle update OR gradle clearChecksums update(if there is a problem with checksums) - to trigger liquibase scripts
- - docker exec it postgres bash
- - apt-get update
- - [PARTMAN] apt-get install postgresql-16-partman
- - apt-get install git
- - apt-get install make
- - apt-get install -y gcc make postgresql-server-dev-16 libxml2-dev
- - git clone https://github.com/pgpartman/pg_partman.git
- - cd pg_partman
- - make 
- - make install
- - `SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';` to verify
- - [CONNECT TO DB] psql -U user -d write_db
+ - ``gradle build --refresh-dependencies``
+ - ``gradle update`` OR ``gradle clearChecksums update``(if there is a problem with checksums) - to trigger liquibase scripts
+ - ``docker exec -it postgres bash``
+ - [CONNECT TO DB] ``psql -U user -d write_db``
+ - ``CREATE SCHEMA IF NOT EXISTS write;`` -> general setup for the schema the app will be using
 
+# Set up PG Partman
+ - ``docker exec -it postgres bash``
+ - ``apt-get update``
+ - ``apt-get install postgresql-16-partman``
+ - ``apt-get install git``
+ - ``apt-get install make``
+ - ``apt-get install -y gcc make postgresql-server-dev-16 libxml2-dev``
+ - ``git clone https://github.com/pgpartman/pg_partman.git``
+ - ``cd pg_partman``
+ - ``make``
+ - ``make install``
+ - [CONNECT TO DB] ``psql -U user -d write_db``
+ - ``CREATE SCHEMA IF NOT EXISTS partman;``
+ - ``CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA partman;``
+      - pgcrypto is needed to generate UUIDs names for child partitions, indexes etc  
+ - ``CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;``
+ - ``SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';`` to verify

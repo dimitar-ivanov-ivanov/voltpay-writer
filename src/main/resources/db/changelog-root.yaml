@@ -1,5 +1,5 @@
 databaseChangeLog:
   - include:
-      file: src/main/resources/db/changelogs/changelog-1.0.sql
+      file: src/main/resources/db/changelogs/changelog-1.0.yaml
   - include:
-      file: src/main/resources/db/changelogs/changelog-1.1.sql
+      file: src/main/resources/db/changelogs/changelog-1.1.yaml

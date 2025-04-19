@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: dimitar_ivanov
+      changes:
+        - sql:
+            sql: |
+              SELECT partman.create_parent(
+                p_parent_table := 'write.payment_core',
+                p_control := 'created_at',
+                p_type := 'range',
+                p_interval := '1 months',
+                p_premake := 2
+              );
+
+  - changeSet:
+      id: 2
+      author: dimitar_ivanov
+      changes:
+        - sql:
+            sql: |
+              SELECT partman.create_parent(
+                 p_parent_table := 'write.payment_metadata',
+                p_control := 'created_at',
+                p_type := 'range',
+                p_interval := '1 months',
+                p_premake := 2
+              );
+
+  - changeSet:
+      id: 3
+      author: dimitar_ivanov
+      changes:
+        - sql:
+            sql: |
+              SELECT partman.create_parent(
+                 p_parent_table := 'write.payment_notes',
+                p_control := 'created_at',
+                p_type := 'range',
+                p_interval := '1 months',
+                p_premake := 2
+              );

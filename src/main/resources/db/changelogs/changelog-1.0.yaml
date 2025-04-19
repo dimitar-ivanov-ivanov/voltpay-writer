@@ -1,0 +1,45 @@
+databaseChangeLog:
+- changeSet:
+    id: 4
+    author: dimitar_ivanov
+    changes:
+      - sql:
+          sql: |
+            CREATE TABLE IF NOT EXISTS write.payment_core (
+              id VARCHAR(26),
+              amount NUMERIC(20, 6),
+              status INTEGER,
+              currenct VARCHAR(3),
+              cust_id BIGINT,
+              type VARCHAR(3),
+              created_at TIMESTAMP NOT NULL,
+              PRIMARY KEY (id, created_at)
+              ) PARTITION BY RANGE (created_at);
+
+- changeSet:
+    id: 5
+    author: dimitar_ivanov
+    changes:
+      - sql:
+          sql: |
+            CREATE TABLE IF NOT EXISTS write.payment_metadata (
+              id VARCHAR(26) not null,
+              created_at TIMESTAMP NOT NULL,
+              updated_at TIMESTAMP,
+              version INTEGER,
+              PRIMARY KEY (id, created_at)
+              ) PARTITION BY RANGE (created_at);
+
+- changeSet:
+    id: 6
+    author: dimitar_ivanov
+    changes:
+      - sql:
+          sql: |
+            CREATE TABLE IF NOT EXISTS write.payment_notes (
+              id VARCHAR(26) NOT NULL,
+              external_ref_id VARCHAR(200) NOT NULL,
+              comment VARCHAR(300),
+              created_at TIMESTAMP NOT NULL,
+              PRIMARY KEY (id, created_at)
+              ) PARTITION BY RANGE (created_at);

@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: voltpay-writer
+  liquibase:
+    default-schema: write
+  datasource:
+    url: jdbc:postgresql://localhost:5433/write_db
+    username: name
+    password: password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: HikariCP
+      maximum-pool-size: 10
