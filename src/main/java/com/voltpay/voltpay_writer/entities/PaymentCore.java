@@ -25,6 +25,9 @@ public class PaymentCore {
 
     private String currency;
 
+    @Column(name = "account_id")
+    private Long accountId;
+
     @Column(name = "cust_id")
     private Long custId;
 

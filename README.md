@@ -21,8 +21,14 @@ send emails to the customer that made the succesful payment.
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
   - The topic has 100 partitions with 2 replicas and 1 day retention
   - There are 5 Kafka brokers to ensure more throughput
+  - On startup there will be warmup events for the brokers to ensure no infra issues with Kafka during big loads.
   - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions as all of the messages for that ACCOUND_ID go into one partition and processing for a single partition is sequential.
   - Consumer should Batch consumer and take messages in batches
+  - We are using custom Serializer/Deserializer that filer out NON-NULL, NON-EMPTY fields to reduce message size.
+  - **We COMMIT TO THE DB ONCE WE HAVE PROCESSED THE ENTIRE batch** (remember only for 1 account) this delays processing for some transactions, but it's worth it.
+  - Otherwise we'll have to open/close and commit once per message which is expensive if we want huge throughput
+  - IF a message fails we put only that message to the dead letter and acknowledge the batch and move forward
+  - TODO: Reprocessing strategy for failed messages -> TBD but most likely re-emit in the original topic.
 
 # Database 
   - PostgreSQL is the chosen DB for it reliability and flexibilty.

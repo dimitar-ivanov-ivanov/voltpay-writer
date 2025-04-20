@@ -33,7 +33,7 @@ drop table write.payment_core;
 drop table write.payment_metadata;
 drop table write.payment_notes;
 
-------
+-------------------
 select * from write.payment_core pc;
 
 select * from write.payment_metadata pm;

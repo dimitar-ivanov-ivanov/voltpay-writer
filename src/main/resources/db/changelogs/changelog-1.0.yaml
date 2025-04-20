@@ -9,6 +9,7 @@ databaseChangeLog:
               id VARCHAR(30),
               amount NUMERIC(20, 6),
               status INTEGER,
+              account_id INTEGER,
               currency VARCHAR(3),
               cust_id BIGINT,
               type VARCHAR(3),
