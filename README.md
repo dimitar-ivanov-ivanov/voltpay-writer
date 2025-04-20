@@ -41,7 +41,9 @@ send emails to the customer that made the succesful payment.
   - Tables to be partitioned on a MONTHLY basis by CREATED_AT column
   - One downside of partitioning is that the PRIMARY KEY has to also include CREATED_AT column to ensure uniqueness across partitions, making the index bigger
   - pgpartman(https://github.com/pgpartman/pg_partman) extension will be used to created and manage partitions, new partitions for the 2 months will be created at the start of every month
-   
+  - For the ID it will be ULID-XXX where XXX is the node ID, even though it's almost impossible to have a collision if we have millions of transactions per secon and hundres of instances of the service it COULD happen theorically
+  - Adding the node id ensures that it won't happen as in one process(instance) we are guaranteed to generate unique ULIDs
+
 # Liquibase
   - The chosen approach for version control of the database 
   - Easy to use and we have rollbacks it necessary 
