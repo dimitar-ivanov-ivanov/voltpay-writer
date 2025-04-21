@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Builder
 public class PaymentCore {
 
     @EmbeddedId
@@ -24,9 +25,6 @@ public class PaymentCore {
     private Integer status;
 
     private String currency;
-
-    @Column(name = "account_id")
-    private Long accountId;
 
     @Column(name = "cust_id")
     private Long custId;

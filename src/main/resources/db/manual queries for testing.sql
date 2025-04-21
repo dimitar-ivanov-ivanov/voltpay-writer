@@ -32,6 +32,7 @@ truncate partman.template_write_payment_notes;
 drop table write.payment_core;
 drop table write.payment_metadata;
 drop table write.payment_notes;
+drop table write.idempotency;
 
 -------------------
 select * from write.payment_core pc;

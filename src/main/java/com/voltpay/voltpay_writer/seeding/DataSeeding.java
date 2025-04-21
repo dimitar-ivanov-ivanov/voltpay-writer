@@ -41,7 +41,6 @@ public class DataSeeding implements CommandLineRunner {
             paymentCore.setAmount(new BigDecimal("10.11133333333333333"));
             paymentCore.setCurrency(Currency.EUR.name());
             paymentCore.setType(TrnType.BWI.name());
-            paymentCore.setAccountId(1L);
             paymentCore.setCustId(2L);
             paymentCore.setStatus(TrnStatus.SUCCESS.getValue());
             paymentCore.setId(key);

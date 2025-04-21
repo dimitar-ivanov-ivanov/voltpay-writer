@@ -23,7 +23,7 @@ send emails to the customer that made the succesful payment.
   - There are 5 Kafka brokers to ensure more throughput
   - On startup there will be warmup events for the brokers to ensure no infra issues with Kafka during big loads.
   - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions as all of the messages for that ACCOUND_ID go into one partition and processing for a single partition is sequential.
-  - Consumer should Batch consumer and take messages in batches
+  - Consumer should Batch consumer and take messages in batches, the messages will then be grouped by key in Map<Key,List<Value>>
   - We are using custom Serializer/Deserializer that filer out NON-NULL, NON-EMPTY fields to reduce message size.
   - **We COMMIT TO THE DB ONCE WE HAVE PROCESSED THE ENTIRE batch** (remember only for 1 account) this delays processing for some transactions, but it's worth it.
   - Otherwise we'll have to open/close and commit once per message which is expensive if we want huge throughput
@@ -103,6 +103,10 @@ send emails to the customer that made the succesful payment.
   - problem with hash based partitioning is that when you declare how many partitions you want you can't increase them and repartition the data 
   - I'll have to manually repartition so make a new table with more partitions, start writing to it, migrate the data to it, route client to the new table and then delete the old table.
   - that seemed like too much maitenance work so I dropped this idea.
+6. Use @Transactional for the consumer 
+  - Unfortunately the transaction is commited after the method execution and it's possble that we have failed events that won't be persisted 
+  - I need to know all of the successfully persisted events so that I produce them to the reader-topic, otherwise I have to publish also the failed events and there will be a difference between WRITE and READ db
+  - so doing manual transactions to the DB using EntityManager was preferrable
 
 # How to Set up Locally
 
