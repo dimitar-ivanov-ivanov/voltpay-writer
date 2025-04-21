@@ -12,11 +12,13 @@ spring:
       pool-name: HikariCP
       maximum-pool-size: 10
   kafka:
-    bootstrap-servers: localhost:9092,localhost:9093,localhost:9094,localhost:9095,localhost:9096
+    bootstrap-servers: localhost:9092,localhost:9093
+    properties:
+      client:
+        dns:
+          lookup: use_all_dns_ips
     consumer:
       group-id: writer-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       max-poll-records: 500
       fetch-max-wait: 500
       fetch-min-size: 1
@@ -24,6 +26,3 @@ spring:
     listener:
       type: batch
       ack-mode: MANUAL_IMMEDIATE
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer

@@ -20,7 +20,7 @@ send emails to the customer that made the succesful payment.
   - Consume messages from payment_writer_topic.
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
   - The topic has 100 partitions with 2 replicas and 1 day retention
-  - There are 5 Kafka brokers to ensure more throughput
+  - There are 2 Kafka brokers as a start, more can be added in the future
   - On startup there will be warmup events for the brokers to ensure no infra issues with Kafka during big loads.
   - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions as all of the messages for that ACCOUND_ID go into one partition and processing for a single partition is sequential.
   - Consumer should Batch consumer and take messages in batches, the messages will then be grouped by key in Map<Key,List<Value>>
@@ -114,7 +114,8 @@ send emails to the customer that made the succesful payment.
  - As mentioned we need to create 5 Brokers and 1 Topic for writing with 100 partitions
  - The other topics will be created by the Apps that will use them 
  - [START] ``docker compose up -d``
- - [TOPIC CREATION] ``docker exec -it kafka1 kafka-topics --create --topic payment-writer --bootstrap-server localhost:9092,kafka2:9092,kafka3:9092,kafka4:9092,kafka5:9092 --partitions 100 --replication-factor 2``
+ - [TOPIC CREATION] ``docker exec -it kafka1 kafka-topics --create --topic write-topic --bootstrap-server kafka1:29092,kafka2:29093 --partitions 100 --replication-factor 1``
+ - [VERIFY] ``docker exec kafka1 kafka-topics --list --bootstrap-server kafka1:29092``
  - [TOPIC DELETION] ``docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092``
  - [END] ``docker compose down``
 
