@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,7 +15,11 @@ import java.math.BigDecimal;
 @Builder
 public class ReadEvent {
 
-    private PrimaryKey id;
+    private String id;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 
     private BigDecimal amount;
 

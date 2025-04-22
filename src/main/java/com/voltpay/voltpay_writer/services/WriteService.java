@@ -79,7 +79,7 @@ public class WriteService {
             PaymentMetadata metadata = PaymentMetadata.builder()
                     .id(primaryKey)
                     .version(version)
-                    .updatedAt(LocalDateTime.now()) //TODO: if it's an update on existing record update it
+                    .updatedAt(createdAt) //TODO: if it's an update on existing record update it
                     .build();
 
             PaymentNotes note = PaymentNotes.builder()
@@ -93,7 +93,9 @@ public class WriteService {
                 paymentNotesRepository.save(note);
 
                 ReadEvent readEvent = ReadEvent.builder()
-                        .id(primaryKey)
+                        .id(ulid)
+                        .createdAt(createdAt)
+                        .updatedAt(createdAt)
                         .version(version)
                         .type(value.getType())
                         .status(value.getStatus())

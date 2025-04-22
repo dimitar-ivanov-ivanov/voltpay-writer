@@ -4,16 +4,14 @@ import com.voltpay.voltpay_writer.pojo.ReadEvent;
 import com.voltpay.voltpay_writer.pojo.WriteEvent;
 import com.voltpay.voltpay_writer.services.WriteService;
 import com.voltpay.voltpay_writer.utils.TrnStatus;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -31,13 +29,12 @@ public class WriteConsumer {
 
     private final WriteService writeService;
 
-    private EntityManager entityManager;
-
     @Autowired
     private final KafkaTemplate<String, ReadEvent> kafkaTemplate;
 
+    @Transactional
     @KafkaListener(topics = "write-topic", containerFactory = "kafkaListenerContainerFactory")
-    public void processBatchOfMessages(List<ConsumerRecord<String, WriteEvent>> records, Acknowledgment ack) {
+    public void processBatchOfMessages(List<ConsumerRecord<String, WriteEvent>> records) {
         // map events by customer id
         Map<Long, List<ConsumerRecord<String, WriteEvent>>> map = records.stream()
                 .filter(this::isEventValid)
@@ -45,31 +42,16 @@ public class WriteConsumer {
 
         if (map.isEmpty()) {
             // TODO: See if it's OK to commit automatically even we have failed events in the batch
-            ack.acknowledge();
             return;
         }
 
         List<ReadEvent> successfulEvents = new ArrayList<>();
         // Not allowed to create transaction on shared EntityManager - use Spring transactions or EJB CMT instead
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-            for (Long custId : map.keySet()) {
-                List<ConsumerRecord<String, WriteEvent>> events = map.get(custId);
-                writeService.write(custId, events, successfulEvents);
-            }
-            transaction.commit();
-            publishEventsToReadTopic(successfulEvents);
-        } catch (Exception ex) {
-            if (transaction.isActive()) {
-                transaction.rollback();
-            }
+        for (Long custId : map.keySet()) {
+            List<ConsumerRecord<String, WriteEvent>> events = map.get(custId);
+            writeService.write(custId, events, successfulEvents);
         }
-
-        // We commit once for the whole batch
-        // TODO: See if it's OK to commit automatically even we have failed events in the batch
-        ack.acknowledge();
+        publishEventsToReadTopic(successfulEvents);
     }
 
     private void publishEventsToReadTopic(List<ReadEvent> successfulEvents) {

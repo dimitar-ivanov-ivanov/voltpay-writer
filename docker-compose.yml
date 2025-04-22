@@ -34,6 +34,8 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: "true"
     networks:
       - kafka-net
+    volumes:
+      - kdata:/var/lib/kafka/data
 
   kafka2:
     image: confluentinc/cp-kafka:7.4.0
@@ -56,6 +58,8 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: "true"
     networks:
       - kafka-net
+    volumes:
+      - kdata:/var/lib/kafka/data
 
   postgres:
     image: postgres:16
@@ -71,6 +75,7 @@ services:
 
 volumes:
   pgdata:
+  kdata:
 
 networks:
   kafka-net:

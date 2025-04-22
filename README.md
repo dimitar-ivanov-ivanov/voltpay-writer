@@ -28,7 +28,7 @@ send emails to the customer that made the succesful payment.
   - **We COMMIT TO THE DB ONCE WE HAVE PROCESSED THE ENTIRE batch** (remember only for 1 account) this delays processing for some transactions, but it's worth it.
   - Otherwise we'll have to open/close and commit once per message which is expensive if we want huge throughput
   - IF a message fails we put only that message to the dead letter and acknowledge the batch and move forward
-  - TODO: Reprocessing strategy for failed messages -> TBD but most likely re-emit in the original topic.
+  - Reprocessing strategy for failed messages -> Re-emit in the original topic.
 
 # Database 
   - PostgreSQL is the chosen DB for it reliability and flexibilty.
@@ -118,6 +118,11 @@ send emails to the customer that made the succesful payment.
  - [VERIFY] ``docker exec kafka1 kafka-topics --list --bootstrap-server kafka1:29092``
  - [TOPIC DELETION] ``docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092``
  - [END] ``docker compose down``
+ - **[VERIFY EVENTS PRODUCED FOR READER TOPIC]**
+ - ``docker exec -it kafka1 bash``
+ - ``cd ../../bin`` -> folder with scripts 
+ - ``kafka-console-consumer --bootstrap-server kafka1:29092 --topic read-topic --property print.key=true --property print.timestamp=true --property print.partition=true --from-beginning``
+
 
 # PostgreSQL
  - ``docker compose up -d``
