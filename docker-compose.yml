@@ -35,7 +35,7 @@ services:
     networks:
       - kafka-net
     volumes:
-      - kdata:/var/lib/kafka/data
+      - kafka1-data:/var/lib/kafka/data
 
   kafka2:
     image: confluentinc/cp-kafka:7.4.0
@@ -59,7 +59,7 @@ services:
     networks:
       - kafka-net
     volumes:
-      - kdata:/var/lib/kafka/data
+      - kafka2-data:/var/lib/kafka/data
 
   postgres:
     image: postgres:16
@@ -75,7 +75,8 @@ services:
 
 volumes:
   pgdata:
-  kdata:
+  kafka1-data:
+  kafka2-data:
 
 networks:
   kafka-net:

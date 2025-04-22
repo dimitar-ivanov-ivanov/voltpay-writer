@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.voltpay.voltpay_writer.pojo.ReadEvent;
 import com.voltpay.voltpay_writer.pojo.WriteEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.mapping.DefaultJackson2JavaTypeMapper;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 import java.util.HashMap;
@@ -47,6 +49,12 @@ public class KafkaConfig {
         props.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, 1);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
+        // Done in order to avoid
+        // The class 'com.voltpay.perf.test.pojo.WriteEvent' is not in the trusted packages: [java.util, java.lang, java.lang.*]. If you believe this class is safe to deserialize, please provide its name.
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        props.put(JsonDeserializer.TYPE_MAPPINGS,
+                "com.voltpay.perf.test.pojo.WriteEvent:com.voltpay.voltpay_writer.pojo.WriteEvent");
+
         return new DefaultKafkaConsumerFactory<>(props,
                 new StringDeserializer(),
                 new JsonDeserializer<>(Object.class, objectMapper()));
@@ -78,8 +86,25 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, WriteEvent> kafkaTemplate() {
+    public ProducerFactory<String, ReadEvent> readProducerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+
+        return new DefaultKafkaProducerFactory<>(configProps,
+                new StringSerializer(),
+                new org.springframework.kafka.support.serializer.JsonSerializer<>(objectMapper()));
+    }
+
+    @Bean
+    public KafkaTemplate<String, WriteEvent> writeEventKafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
+    }
+
+    @Bean
+    public KafkaTemplate<String, ReadEvent> readEventKafkaTemplate() {
+        return new KafkaTemplate<>(readProducerFactory());
     }
 
     @Bean
