@@ -26,3 +26,7 @@ spring:
     listener:
       type: batch
       ack-mode: MANUAL_IMMEDIATE
+
+kafka:
+  dlt:
+    enabled: false

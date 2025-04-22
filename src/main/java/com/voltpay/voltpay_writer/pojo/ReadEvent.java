@@ -1,6 +1,8 @@
 package com.voltpay.voltpay_writer.pojo;
 
+import com.voltpay.voltpay_writer.entities.PrimaryKey;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,7 +11,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class WriteEvent {
+@Builder
+public class ReadEvent {
+
+    private PrimaryKey id;
 
     private BigDecimal amount;
 
@@ -22,4 +27,6 @@ public class WriteEvent {
     private String type;
 
     private String comment;
+
+    private Integer version;
 }

@@ -1,5 +1,6 @@
 package com.voltpay.voltpay_writer.consumer;
 
+import com.voltpay.voltpay_writer.pojo.ReadEvent;
 import com.voltpay.voltpay_writer.pojo.WriteEvent;
 import com.voltpay.voltpay_writer.services.WriteService;
 import com.voltpay.voltpay_writer.utils.TrnStatus;
@@ -9,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
@@ -34,7 +34,7 @@ public class WriteConsumer {
     private EntityManager entityManager;
 
     @Autowired
-    private final KafkaTemplate<String, WriteEvent> kafkaTemplate;
+    private final KafkaTemplate<String, ReadEvent> kafkaTemplate;
 
     @KafkaListener(topics = "write-topic", containerFactory = "kafkaListenerContainerFactory")
     public void processBatchOfMessages(List<ConsumerRecord<String, WriteEvent>> records, Acknowledgment ack) {
@@ -49,7 +49,7 @@ public class WriteConsumer {
             return;
         }
 
-        List<ConsumerRecord<String, WriteEvent>> successfulEvents = new ArrayList<>();
+        List<ReadEvent> successfulEvents = new ArrayList<>();
         // Not allowed to create transaction on shared EntityManager - use Spring transactions or EJB CMT instead
         EntityTransaction transaction = entityManager.getTransaction();
 
@@ -60,7 +60,6 @@ public class WriteConsumer {
                 writeService.write(custId, events, successfulEvents);
             }
             transaction.commit();
-            // TODO: Send successfulEvents to new topic
             publishEventsToReadTopic(successfulEvents);
         } catch (Exception ex) {
             if (transaction.isActive()) {
@@ -73,10 +72,9 @@ public class WriteConsumer {
         ack.acknowledge();
     }
 
-    private void publishEventsToReadTopic(List<ConsumerRecord<String, WriteEvent>> successfulEvents) {
-        // TO DO: Commit the entire POJO (Core + Metadata + Note) Not just the write event
-        for (ConsumerRecord<String, WriteEvent> event: successfulEvents) {
-            kafkaTemplate.send("read-topic", event.key(), event.value());
+    private void publishEventsToReadTopic(List<ReadEvent> successfulEvents) {
+        for (ReadEvent event: successfulEvents) {
+            kafkaTemplate.send("read-topic", event);
         }
     }
 
