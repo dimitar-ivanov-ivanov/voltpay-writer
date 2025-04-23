@@ -66,6 +66,7 @@ send emails to the customer that made the succesful payment.
 
 # Monitoring - TODO
   - TBD but most likely 
+  - Kafka UI -> useful for monitoring individual Kafka messages, Consumer lag, moving offset and deleting topics
   - Prometheus + Grafana -> Request Rate, Latency, Error Rates, Consumer Lag 
   - Kafka Lag Exporter -> Monitor Kafka lag, partition throughput, broker performance, consider Kafdrop also 
   - OpenTelemetry + Zipkin -> Trace full lifecycle of flows, helps to detect bottlenecks, slow queries
@@ -151,3 +152,6 @@ send emails to the customer that made the succesful payment.
       - pgcrypto is needed to generate UUIDs names for child partitions, indexes etc  
  - ``CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;``
  - ``SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';`` to verify
+
+## Current Results
+ - Increased DB connection pool to match consumer threads = 40 + Enable G1 garbage collector

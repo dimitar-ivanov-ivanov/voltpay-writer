@@ -10,7 +10,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: HikariCP
-      maximum-pool-size: 10
+      maximum-pool-size: 50
   kafka:
     bootstrap-servers: localhost:9092,localhost:9093
     properties:
@@ -25,7 +25,6 @@ spring:
       enable-auto-commit: false
     listener:
       type: batch
-      ack-mode: MANUAL_IMMEDIATE
 
 kafka:
   dlt:

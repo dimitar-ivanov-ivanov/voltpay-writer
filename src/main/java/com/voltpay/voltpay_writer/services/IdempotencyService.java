@@ -1,24 +1,22 @@
 package com.voltpay.voltpay_writer.services;
 
 import com.voltpay.voltpay_writer.entities.Idempotency;
+import com.voltpay.voltpay_writer.repositories.IdempotencyRepository;
 import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class IdempotencyService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final IdempotencyRepository idempotencyRepository;
 
     public boolean insert(Idempotency idempotency) {
         try {
-            entityManager.persist(idempotency);
-            entityManager.flush(); // force insert now, so exception is thrown immediately
+            idempotencyRepository.save(idempotency);
             return true;
         } catch (EntityExistsException ex) {
             log.warn("Idempotency {} already persisted", idempotency.getId());

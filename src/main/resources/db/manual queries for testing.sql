@@ -46,3 +46,8 @@ select * from write.payment_metadata pm;
 select * from write.payment_notes pt;
 
 select count(*) from write.idempotency i ;
+
+truncate write.payment_core;
+truncate write.payment_metadata;
+truncate write.payment_notes;
+truncate write.idempotency;
