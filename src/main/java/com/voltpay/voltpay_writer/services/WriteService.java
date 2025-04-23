@@ -38,14 +38,12 @@ public class WriteService {
 
     public void write(Long custId, List<ConsumerRecord<String, WriteEvent>> events, List<ReadEvent> processedEvents) {
 
-        String key = null;
-        WriteEvent value = null;
-
         for (ConsumerRecord<String, WriteEvent> event: events) {
-            key = event.key();
-            value = event.value();
+            String key = event.key();
+            WriteEvent value = event.value();
+            String messageId = value.getMessageId();
 
-            Idempotency idempotency = new Idempotency(key, LocalDate.now());
+            Idempotency idempotency = new Idempotency(messageId, LocalDate.now());
             boolean insertedIdempotency = idempotencyService.insert(idempotency);
 
             // IF idempotency throws unique constraint we're trying to reprocess a message -> disregard
@@ -86,7 +84,7 @@ public class WriteService {
 
                 ReadEvent readEvent = ReadEvent.builder()
                         .id(ulid)
-                        .messageKey(key)
+                        .messageId(messageId)
                         .createdAt(createdAt)
                         .updatedAt(createdAt)
                         .version(version)
@@ -99,7 +97,7 @@ public class WriteService {
 
                 processedEvents.add(readEvent);
             } catch (Exception ex) {
-                log.error("Exception during processing event {}. Sending to Dead Letter.", key);
+                log.error("Exception during processing event {}. Sending to Dead Letter.", messageId);
                 SendToDeadLetter(key, value);
             }
         }

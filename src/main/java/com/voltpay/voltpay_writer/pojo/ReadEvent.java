@@ -15,9 +15,9 @@ import java.time.LocalDateTime;
 @Builder
 public class ReadEvent {
 
-    // Ignoring because we don't need to serializer/deserialize the key of the message in Read Service.
+    // Ignoring because we don't need to serializer/deserialize the id of the message in Read Service.
     @JsonIgnore
-    private String messageKey;
+    private String messageId;
 
     private String id;
 

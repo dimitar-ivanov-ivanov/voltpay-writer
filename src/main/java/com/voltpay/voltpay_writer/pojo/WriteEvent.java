@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 @Data
 public class WriteEvent {
 
+    private String messageId;
+
     private BigDecimal amount;
 
     private Integer status;

@@ -1,3 +1,5 @@
+create schema write;
+
 SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';
 
 SELECT tablename FROM pg_tables WHERE tablename LIKE '%payment%';
@@ -35,8 +37,10 @@ drop table write.payment_notes;
 drop table write.idempotency;
 
 -------------------
-select * from write.payment_core pc;
+select * from write.payment_core pc where id = '01JSGH8Y62QAHP5FTW4S9S3FZ4-001';
 
 select * from write.payment_metadata pm;
 
 select * from write.payment_notes pt;
+
+select * from write.idempotency i ;
