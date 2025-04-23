@@ -1,6 +1,6 @@
 package com.voltpay.voltpay_writer.pojo;
 
-import com.voltpay.voltpay_writer.entities.PrimaryKey;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ReadEvent {
+
+    // Ignoring because we don't need to serializer/deserialize the key of the message in Read Service.
+    @JsonIgnore
+    private String messageKey;
 
     private String id;
 

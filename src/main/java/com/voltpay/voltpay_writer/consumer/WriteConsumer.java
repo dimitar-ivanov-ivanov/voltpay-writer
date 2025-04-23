@@ -11,7 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -32,7 +35,10 @@ public class WriteConsumer {
     @Autowired
     private final KafkaTemplate<String, ReadEvent> kafkaTemplate;
 
-    @Transactional
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
+    //@Transactional
     @KafkaListener(topics = "write-topic", containerFactory = "kafkaListenerContainerFactory")
     public void processBatchOfMessages(List<ConsumerRecord<String, WriteEvent>> records) {
         // map events by customer id
@@ -45,18 +51,28 @@ public class WriteConsumer {
             return;
         }
 
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setName("batch-write-transaction");
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        TransactionStatus status = transactionManager.getTransaction(def);
+
         List<ReadEvent> successfulEvents = new ArrayList<>();
-        // Not allowed to create transaction on shared EntityManager - use Spring transactions or EJB CMT instead
         for (Long custId : map.keySet()) {
             List<ConsumerRecord<String, WriteEvent>> events = map.get(custId);
             writeService.write(custId, events, successfulEvents);
         }
-        publishEventsToReadTopic(successfulEvents);
+
+        if (!successfulEvents.isEmpty()) {
+            transactionManager.commit(status);
+            publishEventsToReadTopic(successfulEvents);
+        } else {
+            transactionManager.rollback(status);
+        }
     }
 
     private void publishEventsToReadTopic(List<ReadEvent> successfulEvents) {
         for (ReadEvent event: successfulEvents) {
-            kafkaTemplate.send("read-topic", event);
+            kafkaTemplate.send("read-topic", event.getMessageKey(), event);
         }
     }
 

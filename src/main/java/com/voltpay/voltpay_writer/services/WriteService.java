@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -25,8 +24,6 @@ import java.util.List;
 @Slf4j
 @AllArgsConstructor
 public class WriteService {
-
-    private static final List<Integer> STATUS_VALUES = Arrays.stream(TrnStatus.values()).map(TrnStatus::getValue).toList();
 
     private final PaymentCoreRepository paymentCoreRepository;
 
@@ -47,11 +44,6 @@ public class WriteService {
         for (ConsumerRecord<String, WriteEvent> event: events) {
             key = event.key();
             value = event.value();
-
-            if (!isEventValid(value)) {
-                log.warn("Event with key {} is NOT valid.", key);
-                continue;
-            }
 
             Idempotency idempotency = new Idempotency(key, LocalDate.now());
             boolean insertedIdempotency = idempotencyService.insert(idempotency);
@@ -94,6 +86,7 @@ public class WriteService {
 
                 ReadEvent readEvent = ReadEvent.builder()
                         .id(ulid)
+                        .messageKey(key)
                         .createdAt(createdAt)
                         .updatedAt(createdAt)
                         .version(version)
@@ -118,14 +111,5 @@ public class WriteService {
         } catch (Exception ex) {
             log.error("Error while trying to send to Dead letter.", ex);
         }
-    }
-
-    private boolean isEventValid(WriteEvent event) {
-        return event.getAmount() != null &&
-                event.getType() != null &&
-                event.getCurrency() != null &&
-                event.getStatus() != null &&
-                event.getAmount().compareTo(BigDecimal.ZERO) > 0 &&
-                STATUS_VALUES.contains(event.getStatus());
     }
 }

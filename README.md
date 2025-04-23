@@ -107,6 +107,7 @@ send emails to the customer that made the succesful payment.
   - Unfortunately the transaction is commited after the method execution and it's possble that we have failed events that won't be persisted 
   - I need to know all of the successfully persisted events so that I produce them to the reader-topic, otherwise I have to publish also the failed events and there will be a difference between WRITE and READ db
   - so doing manual transactions to the DB using EntityManager was preferrable
+  - ALSO "Transaction silently rolled back because it has been marked as rollback-only" happens when one event fails so doing a partial commit for the sucessful events of a batch is impossible
 
 # How to Set up Locally
 
@@ -122,7 +123,7 @@ send emails to the customer that made the succesful payment.
  - ``docker exec -it kafka1 bash``
  - ``cd ../../bin`` -> folder with scripts 
  - ``kafka-console-consumer --bootstrap-server kafka1:29092 --topic read-topic --property print.key=true --property print.timestamp=true --property print.partition=true --from-beginning``
-
+ - OR ``docker exec kafka1 kafka-console-consumer --bootstrap-server kafka1:29092 --topic read-topic --property print.key=true --property print.timestamp=true --property print.partition=true --from-beginning``
 
 # PostgreSQL
  - ``docker compose up -d``

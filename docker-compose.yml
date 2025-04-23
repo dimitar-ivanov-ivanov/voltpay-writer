@@ -12,6 +12,9 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - kafka-net
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-log:/var/lib/zookeeper/log
 
   kafka1:
     image: confluentinc/cp-kafka:7.4.0
@@ -73,10 +76,29 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "18080:18080"
+    depends_on:
+      - kafka1
+      - kafka2
+      - zookeeper
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:29092,kafka2:29093
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      SERVER_PORT: 18080
+    networks:
+      - kafka-net
+
 volumes:
   pgdata:
   kafka1-data:
   kafka2-data:
+  zookeeper-data:
+  zookeeper-log:
 
 networks:
   kafka-net:
