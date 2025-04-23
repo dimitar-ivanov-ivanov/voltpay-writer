@@ -68,7 +68,7 @@ public class KafkaConfig {
         // Commit once for the whole batch to ensure better performance
         // Also no need to manual commits to Kafka
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.BATCH);
-        factory.setConcurrency(10); // Number of threads to process messages
+        factory.setConcurrency(40); // Number of threads to process messages
         return factory;
     }
 

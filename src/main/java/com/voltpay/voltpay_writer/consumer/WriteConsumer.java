@@ -57,10 +57,10 @@ public class WriteConsumer {
         TransactionStatus status = transactionManager.getTransaction(def);
 
         List<ReadEvent> successfulEvents = new ArrayList<>();
-        for (Long custId : map.keySet()) {
+        map.keySet().parallelStream().forEach((custId) -> {
             List<ConsumerRecord<String, WriteEvent>> events = map.get(custId);
             writeService.write(custId, events, successfulEvents);
-        }
+        });
 
         if (!successfulEvents.isEmpty()) {
             transactionManager.commit(status);
@@ -72,7 +72,7 @@ public class WriteConsumer {
 
     private void publishEventsToReadTopic(List<ReadEvent> successfulEvents) {
         for (ReadEvent event: successfulEvents) {
-            kafkaTemplate.send("read-topic", event.getMessageKey(), event);
+            kafkaTemplate.send("read-topic", event.getMessageId(), event);
         }
     }
 
