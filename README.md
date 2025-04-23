@@ -21,7 +21,8 @@ send emails to the customer that made the succesful payment.
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
   - The topic has 100 partitions with 2 replicas and 1 day retention
   - There are 2 Kafka brokers as a start, more can be added in the future
-  - On startup there will be warmup events for the brokers to ensure no infra issues with Kafka during big loads.
+  - TODO: On startup there will be warmup events for the brokers to ensure no issues with Kafka during big loads.
+  - If there are no warmup events during the first performance test the results are disastrous, it was 330 tps, on the third run it was 3300.
   - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions as all of the messages for that ACCOUND_ID go into one partition and processing for a single partition is sequential.
   - Consumer should Batch consumer and take messages in batches, the messages will then be grouped by key in Map<Key,List<Value>>
   - We are using custom Serializer/Deserializer that filer out NON-NULL, NON-EMPTY fields to reduce message size.
@@ -153,5 +154,24 @@ send emails to the customer that made the succesful payment.
  - ``CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;``
  - ``SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';`` to verify
 
-## Current Results
- - Increased DB connection pool to match consumer threads = 40 + Enable G1 garbage collector
+## Performance Test Results
+ - First RUN: Consuming 15k Records -
+   - **DISASTER**, about 200 records per second, this is because there are NO warmup events 
+ - Third RUN: Consuming 25k Records ->
+   - 🔥 Fastest record: 23 ms (21,739 records/sec!)
+   - 🐢 Slowest record: 8376 ms (59.7 records/sec)
+   - 📊 Average throughput: 3,272.9 records/sec
+ - Fourth RUN: Consuming 50K Records
+   - Fastest time: 24 ms → 20,833 records/sec
+   - Slowest time: 11,600 ms → 43 records/sec
+   - Majority of early records stayed in the 60–80 ms sweet spot → ~6,700–8,300 records/sec
+   - A few tiny spikes early on (27 ms, 30 ms, etc.)
+   - Gradual shift into 100–200 ms, then uphill climb into the seconds
+   - End of the run: frequent 4,000–6,000 ms durations
+   - 🧨 One massive outlier at 11,600 ms
+   - There is a repeatable “slowdown curve” over time:
+   - Starts fast (steady sub-100ms range)
+   - Middle section goes through bumpy ramps (100ms → 3000ms)
+   - Final chunk gets choppy and heavy (4000ms+)
+   - This may point to memory pressure, I/O bottlenecks, queueing, or GC buildup!
+   - ![img.png](img.png)
