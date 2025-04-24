@@ -188,9 +188,16 @@ send emails to the customer that made the succesful payment.
    - This may point to memory pressure, I/O bottlenecks, queueing, or GC buildup!
    - ![img.png](img.png)
   - Fifth RUN (04/24/2025)
-   - No Stop the world events, slow performance in generateUlid() because we take NODE_ID from env every time
-   - Added 2 new brokers, and an additional service instance with 50 new consumer threads
-   - Overall performane is 220 tps 
-   - Best case 10k records in a second 
-   - Worst case 59 records in a second 
-   - I think I'm starting to hit hardware issues, still pretty good considering I am running this on my local machine.
+    - No Stop the world events, slow performance in generateUlid() because we take NODE_ID from env every time
+    - Added 2 new brokers, and an additional service instance with 50 new consumer threads
+    - Overall performane is 220 tps 
+    - Best case 10k records in a second 
+    - Worst case 59 records in a second 
+    - I think I'm starting to hit hardware issues, still pretty good considering I am running this on my local machine.
+  - Sixth RUN
+    - Removed ``parallelStream`` and it greatly increased throughput 
+    - Average records processed per second: 1,233.34 
+    - Maximum records per second: 25,000.00
+    - Minimum records per second: 47.39
+  - Seventh RUN - TODO
+    - Increase DB connection pool, reduce batch size, increase consumer threads

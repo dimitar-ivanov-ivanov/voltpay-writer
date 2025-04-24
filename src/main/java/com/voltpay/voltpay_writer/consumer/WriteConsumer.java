@@ -56,7 +56,7 @@ public class WriteConsumer {
         TransactionStatus status = transactionManager.getTransaction(def);
 
         List<ReadEvent> successfulEvents = new ArrayList<>();
-        map.keySet().parallelStream().forEach((custId) -> {
+        map.keySet().forEach((custId) -> {
             List<ConsumerRecord<String, WriteEvent>> events = map.get(custId);
             writeService.write(custId, events, successfulEvents);
         });
