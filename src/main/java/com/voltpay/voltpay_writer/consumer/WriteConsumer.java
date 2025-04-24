@@ -56,7 +56,6 @@ public class WriteConsumer {
         TransactionStatus status = transactionManager.getTransaction(def);
 
         List<ReadEvent> successfulEvents = new ArrayList<>();
-        // Parallel stream here increases throughput by about 30-40 records per second
         map.keySet().parallelStream().forEach((custId) -> {
             List<ConsumerRecord<String, WriteEvent>> events = map.get(custId);
             writeService.write(custId, events, successfulEvents);
@@ -80,7 +79,8 @@ public class WriteConsumer {
         String key = record.key();
         Object val = record.value();
 
-        if (key == null || val.getClass() != WriteEvent.class) {
+        // Explicitly checking for warmup events
+        if (key == null || val == null || val.getClass() != WriteEvent.class) {
             return false;
         }
 

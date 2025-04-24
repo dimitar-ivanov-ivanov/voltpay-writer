@@ -1,6 +1,7 @@
 ## Voltpay Payment Writer
 
 This Service is responsible for writing payments for Voltpay.
+This is an experiment for me to try to make a system that writes 100K transactions per second.
 The reading logic is offloaded to a separate service to ensure that there is no contention for CPU/Resources 
 between reading and writing, so both are in separate services and can independently scaled and deployed.
 Neither of these microservices know of each other's existence as they communicate through Kafka topic.
@@ -65,14 +66,19 @@ send emails to the customer that made the succesful payment.
      - ``gradle rollbackCount -PliquibaseCommandValue=1`` -> very important for rolling back ONE change
      - ``SELECT * FROM databasechangelog ORDER BY dateexecuted DESC;`` -> to monitor when a change was executed
 
-# Monitoring - TODO
+# Functional Monitoring - TODO
   - TBD but most likely 
   - Kafka UI -> useful for monitoring individual Kafka messages, Consumer lag, moving offset and deleting topics
   - Prometheus + Grafana -> Request Rate, Latency, Error Rates, Consumer Lag 
   - Kafka Lag Exporter -> Monitor Kafka lag, partition throughput, broker performance, consider Kafdrop also 
   - OpenTelemetry + Zipkin -> Trace full lifecycle of flows, helps to detect bottlenecks, slow queries
   - Loki - used for general logs with correlation IDs
-  - Node Exporter - Infra monitoring for CPU, RAM, Disk, network etc
+
+# Non-Functional Monitoring
+ - Node Exporter - Infra monitoring for CPU, RAM, Disk, network etc
+ - VisualVM - Java process monitoring: heap usage and dumps, thread dumps, thread dumps to be analyzed with https://spotify.github.io
+ - JConsole - Java memory, CPU, Threads
+ - JProfiler
 
 # Alerts - TODO 
   - High Error Rate
@@ -117,10 +123,11 @@ send emails to the customer that made the succesful payment.
  - As mentioned we need to create 5 Brokers and 1 Topic for writing with 100 partitions
  - The other topics will be created by the Apps that will use them 
  - [START] ``docker compose up -d``
- - [TOPIC CREATION] ``docker exec -it kafka1 kafka-topics --create --topic write-topic --bootstrap-server kafka1:29092,kafka2:29093 --partitions 100 --replication-factor 1``
+ - [TOPIC CREATION] ``docker exec -it kafka1 kafka-topics --create --topic write-topic --bootstrap-server kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095 --partitions 100 --replication-factor 1``
  - [VERIFY] ``docker exec kafka1 kafka-topics --list --bootstrap-server kafka1:29092``
  - [TOPIC DELETION] ``docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092``
  - [END] ``docker compose down``
+ - [REMOVE VOLUMES] ``docker volume rm voltpay-writer_zookeeper-data voltpay-writer_zookeeper-log voltpay-writer_kafka1-data voltpay-writer_kafka2-data voltpay-writer_kafka3-data voltpay-writer_kafka4-data``
  - **[VERIFY EVENTS PRODUCED FOR READER TOPIC]**
  - ``docker exec -it kafka1 bash``
  - ``cd ../../bin`` -> folder with scripts 
@@ -154,14 +161,19 @@ send emails to the customer that made the succesful payment.
  - ``CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;``
  - ``SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';`` to verify
 
+## Performance Test Tools 
+ - Jmeter
+
 ## Performance Test Results
- - First RUN: Consuming 15k Records -
+ - First RUN: Consuming 15k Records (04/23/2025)
    - **DISASTER**, about 200 records per second, this is because there are NO warmup events 
- - Third RUN: Consuming 25k Records ->
+ - Third RUN: Consuming 25k Records (04/23/2025)
+   - Results are warmup (first and second run)
    - 🔥 Fastest record: 23 ms (21,739 records/sec!)
    - 🐢 Slowest record: 8376 ms (59.7 records/sec)
    - 📊 Average throughput: 3,272.9 records/sec
- - Fourth RUN: Consuming 50K Records
+ - Fourth RUN: Consuming 50K Records (04/23/2025)
+   - Enable G1 garbage collector, increased consumer threads, increased DB connections to match consumer threads
    - Fastest time: 24 ms → 20,833 records/sec
    - Slowest time: 11,600 ms → 43 records/sec
    - Majority of early records stayed in the 60–80 ms sweet spot → ~6,700–8,300 records/sec
@@ -175,3 +187,10 @@ send emails to the customer that made the succesful payment.
    - Final chunk gets choppy and heavy (4000ms+)
    - This may point to memory pressure, I/O bottlenecks, queueing, or GC buildup!
    - ![img.png](img.png)
+  - Fifth RUN (04/24/2025)
+   - No Stop the world events, slow performance in generateUlid() because we take NODE_ID from env every time
+   - Added 2 new brokers, and an additional service instance with 50 new consumer threads
+   - Overall performane is 220 tps 
+   - Best case 10k records in a second 
+   - Worst case 59 records in a second 
+   - I think I'm starting to hit hardware issues, still pretty good considering I am running this on my local machine.
