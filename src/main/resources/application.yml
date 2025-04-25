@@ -12,14 +12,14 @@ spring:
       pool-name: HikariCP
       maximum-pool-size: 50
   kafka:
-    bootstrap-servers: localhost:9092,localhost:9093
+    bootstrap-servers: localhost:9092,localhost:9093,localhost:9094,localhost:9095
     properties:
       client:
         dns:
           lookup: use_all_dns_ips
     consumer:
       group-id: writer-group
-      max-poll-records: 500
+      max-poll-records: 250
       fetch-max-wait: 500
       fetch-min-size: 1
       enable-auto-commit: false

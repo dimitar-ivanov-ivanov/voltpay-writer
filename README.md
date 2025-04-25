@@ -11,9 +11,9 @@ This means that the Writer does NOT wait for the Reader to persist the changes, 
 There is an idempotency check every time we try to process a message to ensure we don't reprocessed already processed messages.
 The reprocessing can happen because of rebalancing, restarts, retries etc.
 There is an idempotency job that deletes idempotency records older than one week.
-Kafka consumer should consume messages in batches and IF there are messages for one account those can be commited at the same time OR in batches (10-20-50 TBD)
+Kafka consumer should consume messages in batches and we do ONE DB commit for the entire batch, also we do ONE OFFSET Commit/acknowledgement to Kafka.
 After successful write publish to payment_email topic which will be consumed by payment email service and it will
-send emails to the customer that made the succesful payment.
+send emails to the customer that made the successful payment.
 
 # Architecture
 ![img_2.png](img_2.png)
@@ -78,7 +78,7 @@ send emails to the customer that made the succesful payment.
  - Node Exporter - Infra monitoring for CPU, RAM, Disk, network etc
  - VisualVM - Java process monitoring: heap usage and dumps, thread dumps, thread dumps to be analyzed with https://spotify.github.io
  - JConsole - Java memory, CPU, Threads
- - JProfiler
+ - JProfiler - same as above two
 
 # Alerts - TODO 
   - High Error Rate
@@ -120,7 +120,7 @@ send emails to the customer that made the succesful payment.
 # How to Set up Locally
 
 # Kafka 
- - As mentioned we need to create 5 Brokers and 1 Topic for writing with 100 partitions
+ - As mentioned we need to create 4 Brokers and 1 Topic for writing with 100 partitions
  - The other topics will be created by the Apps that will use them 
  - [START] ``docker compose up -d``
  - [TOPIC CREATION] ``docker exec -it kafka1 kafka-topics --create --topic write-topic --bootstrap-server kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095 --partitions 100 --replication-factor 1``
@@ -128,6 +128,7 @@ send emails to the customer that made the succesful payment.
  - [TOPIC DELETION] ``docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092``
  - [END] ``docker compose down``
  - [REMOVE VOLUMES] ``docker volume rm voltpay-writer_zookeeper-data voltpay-writer_zookeeper-log voltpay-writer_kafka1-data voltpay-writer_kafka2-data voltpay-writer_kafka3-data voltpay-writer_kafka4-data``
+ - [ALTER PARTITIONS ON TOPIC] ``docker exec -it kafka1 kafka-topics --alter --topic write-topic --partitions 150 --bootstrap-server kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095``
  - **[VERIFY EVENTS PRODUCED FOR READER TOPIC]**
  - ``docker exec -it kafka1 bash``
  - ``cd ../../bin`` -> folder with scripts 
@@ -142,6 +143,13 @@ send emails to the customer that made the succesful payment.
  - ``docker exec -it postgres bash``
  - [CONNECT TO DB] ``psql -U user -d write_db``
  - ``CREATE SCHEMA IF NOT EXISTS write;`` -> general setup for the schema the app will be using
+ - **[OVERRIDE POSSIBLE NUMBER OF CONNECTIONS]**
+ - ``docker exec -it postgres bash``
+ - ``cd /var/lib/postgresql/data``
+ - ``apt-get update``
+ - ``apt-get install nano``
+ - ``nano postgresql.conf``
+ - ``change max_connections to whatever you want``
 
 # Set up PG Partman
  - ``docker exec -it postgres bash``
@@ -162,20 +170,22 @@ send emails to the customer that made the succesful payment.
  - ``SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';`` to verify
 
 ## Performance Test Tools 
- - Jmeter
+ - Jmeter 
+    - download Binaries: https://jmeter.apache.org/download_jmeter.cgi
+    - latest test plan can be  found here: https://github.com/dimitar-ivanov-ivanov/voltpay-perf-test/blob/main/jmeter_test_plan.jmx
 
 ## Performance Test Results
+ - All tests to be conducted locally on my machine 
+   - CPU Intel(R) Core(TM) i7-14700HX - 20 CORES
+   - Memory - 32GB RAM
+   - GPU NVIDIA GeForce RTX 4060 Laptop GPU
  - First RUN: Consuming 15k Records (04/23/2025)
    - **DISASTER**, about 200 records per second, this is because there are NO warmup events 
- - Third RUN: Consuming 25k Records (04/23/2025)
+ - 3rd RUN: Consuming 25k Records (04/23/2025)
    - Results are warmup (first and second run)
-   - 🔥 Fastest record: 23 ms (21,739 records/sec!)
-   - 🐢 Slowest record: 8376 ms (59.7 records/sec)
-   - 📊 Average throughput: 3,272.9 records/sec
- - Fourth RUN: Consuming 50K Records (04/23/2025)
+   - Average records processed per second: 3,272.9
+ - 4th RUN: Consuming 50K Records (04/23/2025)
    - Enable G1 garbage collector, increased consumer threads, increased DB connections to match consumer threads
-   - Fastest time: 24 ms → 20,833 records/sec
-   - Slowest time: 11,600 ms → 43 records/sec
    - Majority of early records stayed in the 60–80 ms sweet spot → ~6,700–8,300 records/sec
    - A few tiny spikes early on (27 ms, 30 ms, etc.)
    - Gradual shift into 100–200 ms, then uphill climb into the seconds
@@ -187,17 +197,31 @@ send emails to the customer that made the succesful payment.
    - Final chunk gets choppy and heavy (4000ms+)
    - This may point to memory pressure, I/O bottlenecks, queueing, or GC buildup!
    - ![img.png](img.png)
-  - Fifth RUN (04/24/2025)
-    - No Stop the world events, slow performance in generateUlid() because we take NODE_ID from env every time
+  - 5th RUN - 25k records (04/24/2025)
+    - No Stop the world events, slow performance in generateUlid() because we take NODE_ID from environment for every record instead of taking once
     - Added 2 new brokers, and an additional service instance with 50 new consumer threads
-    - Overall performane is 220 tps 
-    - Best case 10k records in a second 
-    - Worst case 59 records in a second 
+    - Average records processed per second: 220 tps 
+    - Maximum records per second: 10k
+    - Minimum records per second: 59
     - I think I'm starting to hit hardware issues, still pretty good considering I am running this on my local machine.
-  - Sixth RUN
+  - 6th RUN - 25k records (04/24/2025)
     - Removed ``parallelStream`` and it greatly increased throughput 
     - Average records processed per second: 1,233.34 
-    - Maximum records per second: 25,000.00
-    - Minimum records per second: 47.39
-  - Seventh RUN - TODO
-    - Increase DB connection pool, reduce batch size, increase consumer threads
+  - 7th RUN (04/25/2025)
+    - reduce batch size to 250
+    - warmup with 3k,5k,15k, then load testing with 5k,10k,15k,25k
+    - results are from 30k records
+    - A lot more consistent average, we were about to hit **5400 records processed per second**
+  - 8th RUN (04/25/2025)
+    - make topic have 150 partitions
+    - add another instance of the writer(150 consumer threads total)
+    - increase the possible connections the DB can take to 150 (its 100 by default)
+    - warmup with 5k, 15k, 25k records, load testing with 5k, 10k, 15k, 20k
+    - for 25k records -> average: 3,186 records/second
+    - for 30k records -> average: 2,792 records/second
+    - for 30k records again -> 2,836 records/second
+    - overall it got worse because of resource contention for the consumer threads(150) and because of Kafka rebalancing
+    - this could yield better results on machine stronger than mine
+  - 9th RUN 
+     - Produce the messages before turning on the consumers, keep the 150 threads and partitions for now.
+     - I'm suspecting that the producer(single-threaded) can't keep it 
