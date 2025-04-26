@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class VoltpayWriterApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(VoltpayWriterApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(VoltpayWriterApplication.class, args);
+    }
 }

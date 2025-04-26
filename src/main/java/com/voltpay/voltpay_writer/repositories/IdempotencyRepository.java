@@ -10,10 +10,10 @@ import java.time.LocalDate;
 
 public interface IdempotencyRepository extends JpaRepository<Idempotency, String> {
 
-  @Modifying
-  @Query(
-          value = "INSERT INTO write.idempotency (id, date) VALUES (:id, :date)",
-          nativeQuery = true
-  )
-  int insertNew(@Param("id") String id, @Param("date")LocalDate date);
+    @Modifying
+    @Query(
+        value = "INSERT INTO write.idempotency (id, date) VALUES (:id, :date)",
+        nativeQuery = true
+    )
+    int insertNew(@Param("id") String id, @Param("date")LocalDate date);
 }

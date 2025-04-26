@@ -1,12 +1,15 @@
 package com.voltpay.voltpay_writer.services;
 
-import com.voltpay.voltpay_writer.entities.*;
+import com.voltpay.voltpay_writer.entities.Idempotency;
+import com.voltpay.voltpay_writer.entities.PaymentCore;
+import com.voltpay.voltpay_writer.entities.PaymentMetadata;
+import com.voltpay.voltpay_writer.entities.PaymentNotes;
+import com.voltpay.voltpay_writer.entities.PrimaryKey;
 import com.voltpay.voltpay_writer.pojo.ReadEvent;
 import com.voltpay.voltpay_writer.pojo.WriteEvent;
 import com.voltpay.voltpay_writer.repositories.PaymentCoreRepository;
 import com.voltpay.voltpay_writer.repositories.PaymentMetadataRepository;
 import com.voltpay.voltpay_writer.repositories.PaymentNotesRepository;
-import com.voltpay.voltpay_writer.utils.TrnStatus;
 import com.voltpay.voltpay_writer.utils.UlidGenerator;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 @Service

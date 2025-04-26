@@ -86,6 +86,12 @@ send emails to the customer that made the successful payment.
   - DB slow queries 
   - Out of memory errors
 
+# General Stuff
+- Checkstyle is used to enforce standards for code quality
+- use ``gradle checkstyleMain`` to use
+- checkstyle rules can be found in ``config/checkstyle/checkstyle.xml``
+
+
 # Other ideas that were considered and DROPPED
 
 1. **Use trigger to persist data to reader table**
