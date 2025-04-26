@@ -10,6 +10,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -38,8 +40,8 @@ public class WriteConsumer {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
-    //@Transactional
     @KafkaListener(topics = "write-topic", containerFactory = "kafkaListenerContainerFactory")
+    @Retryable(maxAttempts = 1, backoff = @Backoff(delay = 1000))
     public void processBatchOfMessages(List<ConsumerRecord<String, WriteEvent>> records) {
         // map events by customer id
         Map<Long, List<ConsumerRecord<String, WriteEvent>>> map = records.stream()

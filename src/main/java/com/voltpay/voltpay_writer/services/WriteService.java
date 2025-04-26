@@ -98,12 +98,12 @@ public class WriteService {
                 processedEvents.add(readEvent);
             } catch (Exception ex) {
                 log.error("Exception during processing event {}. Sending to Dead Letter.", messageId);
-                SendToDeadLetter(key, value);
+                sendToDeadLetter(key, value);
             }
         }
     }
 
-    private void SendToDeadLetter(String key, WriteEvent value) {
+    private void sendToDeadLetter(String key, WriteEvent value) {
         try {
             deadLetterTemplate.send("write-topic-dlt", key, value);
         } catch (Exception ex) {

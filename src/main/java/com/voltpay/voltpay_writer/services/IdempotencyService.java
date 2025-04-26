@@ -2,9 +2,9 @@ package com.voltpay.voltpay_writer.services;
 
 import com.voltpay.voltpay_writer.entities.Idempotency;
 import com.voltpay.voltpay_writer.repositories.IdempotencyRepository;
-import jakarta.persistence.EntityExistsException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,9 +16,9 @@ public class IdempotencyService {
 
     public boolean insert(Idempotency idempotency) {
         try {
-            idempotencyRepository.save(idempotency);
+            idempotencyRepository.insertNew(idempotency.getId(), idempotency.getDate());
             return true;
-        } catch (EntityExistsException ex) {
+        } catch (DataIntegrityViolationException ex) {
             log.warn("Idempotency {} already persisted", idempotency.getId());
             return false;
         }

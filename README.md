@@ -22,13 +22,11 @@ send emails to the customer that made the successful payment.
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
   - The topic has 100 partitions with 2 replicas and 1 day retention
   - There are 2 Kafka brokers as a start, more can be added in the future
-  - TODO: On startup there will be warmup events for the brokers to ensure no issues with Kafka during big loads.
+  - In the perf project there is an API for producing warmup events, very important to do before testing to ensure no performance degradation during big loads.
   - If there are no warmup events during the first performance test the results are disastrous, it was 330 tps, on the third run it was 3300.
   - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions as all of the messages for that ACCOUND_ID go into one partition and processing for a single partition is sequential.
   - Consumer should Batch consumer and take messages in batches, the messages will then be grouped by key in Map<Key,List<Value>>
   - We are using custom Serializer/Deserializer that filer out NON-NULL, NON-EMPTY fields to reduce message size.
-  - **We COMMIT TO THE DB ONCE WE HAVE PROCESSED THE ENTIRE batch** (remember only for 1 account) this delays processing for some transactions, but it's worth it.
-  - Otherwise we'll have to open/close and commit once per message which is expensive if we want huge throughput
   - IF a message fails we put only that message to the dead letter and acknowledge the batch and move forward
   - Reprocessing strategy for failed messages -> Re-emit in the original topic.
 
@@ -48,7 +46,7 @@ send emails to the customer that made the successful payment.
   - Tables to be PARTITIONED, it will reduce contention on the same table and distributed writes to different tables (partitions)
   - Tables to be partitioned on a MONTHLY basis by CREATED_AT column
   - One downside of partitioning is that the PRIMARY KEY has to also include CREATED_AT column to ensure uniqueness across partitions, making the index bigger
-  - pgpartman(https://github.com/pgpartman/pg_partman) extension will be used to created and manage partitions, new partitions for the 2 months will be created at the start of every month
+  - pgpartman(https://github.com/pgpartman/pg_partman) extension will be used to created and manage partitions, new partitions for the next 2 months will be created at the start of every month
   - For the ID it will be ULID-XXX where XXX is the node ID, even though it's almost impossible to have a collision if we have millions of transactions per secon and hundres of instances of the service it COULD happen theorically
   - Adding the node id ensures that it won't happen as in one process(instance) we are guaranteed to generate unique ULIDs
 
@@ -68,7 +66,7 @@ send emails to the customer that made the successful payment.
 
 # Functional Monitoring - TODO
   - TBD but most likely 
-  - Kafka UI -> useful for monitoring individual Kafka messages, Consumer lag, moving offset and deleting topics
+  - Kafka UI -> useful for monitoring individual Kafka messages, Consumer lag, moving offset and truncating/deleting topics
   - Prometheus + Grafana -> Request Rate, Latency, Error Rates, Consumer Lag 
   - Kafka Lag Exporter -> Monitor Kafka lag, partition throughput, broker performance, consider Kafdrop also 
   - OpenTelemetry + Zipkin -> Trace full lifecycle of flows, helps to detect bottlenecks, slow queries
@@ -91,31 +89,38 @@ send emails to the customer that made the successful payment.
 # Other ideas that were considered and DROPPED
 
 1. **Use trigger to persist data to reader table**
-  - The trigger is persisting in the read table records one by one, consumer for reads can commit in batches 
-  - having a consumer is more flexible, we can choose in the future to commit the data to another storage i.e to a separate database just for reading 
-  - monitoring a trigger behavior is a big question mark ?? However monitoring a Java Consumer for Kafka is much more straight-forward
-  - also I don't know how to test the trigger, but I do know how to write a unit/integration test for Kafka consumer written in Java.
-  - for the consumer we can rely on Kafka retries(3 by default) if the trigger fails once it will have to go to a Dead Letter Table (not bad but you have more dependency on the DB instead of Kafka)
+   - The trigger is persisting in the read table records one by one, consumer for reads can commit in batches 
+   - having a consumer is more flexible, we can choose in the future to commit the data to another storage i.e to a separate database just for reading 
+   - monitoring a trigger behavior is a big question mark ?? However monitoring a Java Consumer for Kafka is much more straight-forward
+   - also I don't know how to test the trigger, but I do know how to write a unit/integration test for Kafka consumer written in Java.
+   - for the consumer we can rely on Kafka retries(3 by default) if the trigger fails once it will have to go to a Dead Letter Table (not bad but you have more dependency on the DB instead of Kafka)
 2. **Use UUID for Write DB and ULID for READ DB**
-  - Initially the idea was that we don't need indexes which greatly benefit from ULID and we can just use UUID, but then use ULIDs for READs for faster index node insertion.
-  - I dropped this because I'll have to do some magic converstions which will slow down the system 
-  - Better to use ULIDs because even though they have no benefit for Write they have benefit for Read and the IDs for records are the same in both systems so no mappings needed
+    - Initially the idea was that we don't need indexes which greatly benefit from ULID and we can just use UUID, but then use ULIDs for READs for faster index node insertion.
+    - I dropped this because I'll have to do some magic converstions which will slow down the system 
+    - Better to use ULIDs because even though they have no benefit for Write they have benefit for Read and the IDs for records are the same in both systems so no mappings needed
 3. **Remove the index on PRIMARY KEY on "payment_core" table to speed up writes** 
-  - Ultimately I decided against this, because we will use ULID for the ID which shows good performance for the writes i.e there isn't that much rebalancing of the index and also this index will be beneficial for updates
+   - Ultimately I decided against this, because we will use ULID for the ID which shows good performance for the writes i.e there isn't that much rebalancing of the index and also this index will be beneficial for updates
 4. **Generate ULID in the DB using https://github.com/andrielfn/pg-ulid.git**
-  - Ultimately I decided to generate it on app level 
-  - I already have a created_at column and I don't see perfect ULID sort order
-  - I'd rather avoid a DB bottleneck for the ULID generation in the DB, also generating it in the app is more flexible as in the future we can choose to write it to another storage
+   - Ultimately I decided to generate it on app level 
+   - I already have a created_at column and I don't see perfect ULID sort order
+   - I'd rather avoid a DB bottleneck for the ULID generation in the DB, also generating it in the app is more flexible as in the future we can choose to write it to another storage
 5. **Use Hash based partitioning for tables**
-  - I wanted to use this initially because partitioning by months, days, hours seemed like it would lead to too many partitions 
-  - problem with hash based partitioning is that when you declare how many partitions you want you can't increase them and repartition the data 
-  - I'll have to manually repartition so make a new table with more partitions, start writing to it, migrate the data to it, route client to the new table and then delete the old table.
-  - that seemed like too much maitenance work so I dropped this idea.
-6. Use @Transactional for the consumer 
-  - Unfortunately the transaction is commited after the method execution and it's possble that we have failed events that won't be persisted 
-  - I need to know all of the successfully persisted events so that I produce them to the reader-topic, otherwise I have to publish also the failed events and there will be a difference between WRITE and READ db
-  - so doing manual transactions to the DB using EntityManager was preferrable
-  - ALSO "Transaction silently rolled back because it has been marked as rollback-only" happens when one event fails so doing a partial commit for the sucessful events of a batch is impossible
+   - I wanted to use this initially because partitioning by months, days, hours seemed like it would lead to too many partitions 
+   - problem with hash based partitioning is that when you declare how many partitions you want you can't increase them and repartition the data 
+   - I'll have to manually repartition so make a new table with more partitions, start writing to it, migrate the data to it, route client to the new table and then delete the old table.
+   - that seemed like too much maitenance work so I dropped this idea.
+6. **Use ```@Transactional``` for the consumer** 
+   - Unfortunately the transaction is commited after the method execution and it's possble that we have failed events that won't be persisted 
+   - I need to know all of the successfully persisted events so that I produce them to the reader-topic, otherwise I have to publish also the failed events and there will be a difference between WRITE and READ db
+   - so doing manual transactions to the DB using EntityManager was preferrable
+   - ALSO "Transaction silently rolled back because it has been marked as rollback-only" happens when one event fails so doing a partial commit for the sucessful events of a batch is impossible
+7. **Caching ULIDs at the start of the APP** 
+   - This was an idea to improve ULID generation by creating them upfront and not every time we process a record.
+   - And then we fetch ulids from the cache when we process a record
+   - The main problem here is that we'll have a bigger memory footprint
+   - When we run out of ulids we'll have to generate them again which might cause a delay and timeouts with kafka or rebalancing for the consumer 
+   - We'll have at least 100 threads using that structure so it has to be thread-safe, but more importantly it adds another lock that the threads will have to wait for 
+   - Also that lock is just slowing down threads, causing more CPU context switching
 
 # How to Set up Locally
 
@@ -125,7 +130,7 @@ send emails to the customer that made the successful payment.
  - [START] ``docker compose up -d``
  - [TOPIC CREATION] ``docker exec -it kafka1 kafka-topics --create --topic write-topic --bootstrap-server kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095 --partitions 100 --replication-factor 1``
  - [VERIFY] ``docker exec kafka1 kafka-topics --list --bootstrap-server kafka1:29092``
- - [TOPIC DELETION] ``docker exec -it kafka1 kafka-topics --delete --topic payment_writer --bootstrap-server localhost:9092``
+ - [TOPIC DELETION] ``docker exec -it kafka1 kafka-topics --delete --topic write-topic --bootstrap-server kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095``
  - [END] ``docker compose down``
  - [REMOVE VOLUMES] ``docker volume rm voltpay-writer_zookeeper-data voltpay-writer_zookeeper-log voltpay-writer_kafka1-data voltpay-writer_kafka2-data voltpay-writer_kafka3-data voltpay-writer_kafka4-data``
  - [ALTER PARTITIONS ON TOPIC] ``docker exec -it kafka1 kafka-topics --alter --topic write-topic --partitions 150 --bootstrap-server kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095``
@@ -222,6 +227,3 @@ send emails to the customer that made the successful payment.
     - for 30k records again -> 2,836 records/second
     - overall it got worse because of resource contention for the consumer threads(150) and because of Kafka rebalancing
     - this could yield better results on machine stronger than mine
-  - 9th RUN 
-     - Produce the messages before turning on the consumers, keep the 150 threads and partitions for now.
-     - I'm suspecting that the producer(single-threaded) can't keep it 
