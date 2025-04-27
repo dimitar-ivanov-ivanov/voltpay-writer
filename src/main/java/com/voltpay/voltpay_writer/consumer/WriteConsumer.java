@@ -35,7 +35,7 @@ public class WriteConsumer {
     private final WriteService writeService;
 
     @Autowired
-    private final KafkaTemplate<String, ReadEvent> kafkaTemplate;
+    private final KafkaTemplate<String, ReadEvent> readEventKafkaTemplate;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -73,7 +73,7 @@ public class WriteConsumer {
 
     private void publishEventsToReadTopic(List<ReadEvent> successfulEvents) {
         for (ReadEvent event: successfulEvents) {
-            kafkaTemplate.send("read-topic", event.getMessageId(), event);
+            readEventKafkaTemplate.send("read-topic", event.getMessageId(), event);
         }
     }
 
@@ -92,6 +92,7 @@ public class WriteConsumer {
                 event.getType() != null &&
                 event.getCurrency() != null &&
                 event.getStatus() != null &&
+                event.getCustId() != null &&
                 event.getAmount().compareTo(BigDecimal.ZERO) > 0 &&
                 STATUS_VALUES.contains(event.getStatus());
     }
