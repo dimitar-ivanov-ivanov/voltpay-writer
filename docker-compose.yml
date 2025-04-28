@@ -12,6 +12,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - kafka-net
+      - general
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-log:/var/lib/zookeeper/log
@@ -37,6 +38,7 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: "true"
     networks:
       - kafka-net
+      - general
     volumes:
       - kafka1-data:/var/lib/kafka/data
 
@@ -61,6 +63,7 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: "true"
     networks:
       - kafka-net
+      - general
     volumes:
       - kafka2-data:/var/lib/kafka/data
 
@@ -85,6 +88,7 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: "true"
     networks:
       - kafka-net
+      - general
     volumes:
       - kafka3-data:/var/lib/kafka/data
 
@@ -109,6 +113,7 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: "true"
     networks:
       - kafka-net
+      - general
     volumes:
       - kafka4-data:/var/lib/kafka/data
 
@@ -123,6 +128,8 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - general
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -142,6 +149,25 @@ services:
       SERVER_PORT: 18080
     networks:
       - kafka-net
+      - general
+
+#  voltpay-writer:
+#    image: voltpay-writer # use local image created from Dockerfile
+#    container_name: voltpay-writer
+#    environment:
+#      SPRING_PROFILES_ACTIVE: docker
+#      NODE_ID: 001
+#    ports:
+#      - "8080:8080"
+#    networks:
+#      - kafka-net # allows app to talk to kafka
+#      - default # allows app to talk to postgres, since both use the default network
+#    depends_on:
+#      - kafka1
+#      - kafka2
+#      - kafka3
+#      - kafka4
+#      - postgres
 
 volumes:
   pgdata:
@@ -155,3 +181,5 @@ volumes:
 networks:
   kafka-net:
     driver: bridge
+  general:
+    external: true

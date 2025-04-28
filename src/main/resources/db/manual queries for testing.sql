@@ -41,6 +41,8 @@ select count(*) from write.payment_core pc where id = '01JSGH8Y62QAHP5FTW4S9S3FZ
 
 select count(*) from write.payment_core
 
+select * from write.payment_core
+
 select * from write.payment_metadata pm;
 
 select * from write.payment_notes pt;

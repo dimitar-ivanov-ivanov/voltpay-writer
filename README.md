@@ -184,6 +184,17 @@ send emails to the customer that made the successful payment.
  - ``CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;``
  - ``SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';`` to verify
 
+# How to Run 
+ - Windows 
+   - ``set NODE_ID=001 && java -Djava.opts="-XX:+UseG1GC" -Djava.tool.options="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost" -jar voltpay-writer-0.0.1-SNAPSHOT.jar --spring.profiles.active=local``
+ - Docker 
+   - ``docker network create general``  we need this network to ensure that containers for the app outside of compose can talk to containers from compose file
+   - ``docker build -t voltpay-writer .``  
+   - ``docker compose up -d`` -> the app container depends on the containers in compose to be started
+   - ``docker run -d --name voltpay-writer --network general -p 8080:8080 -e NODE_ID=001 voltpay-writer``
+   - [IF WE WANT ANOTEHR INSTANCE] ``docker run -d --name voltpay-writer-2 --network general -p 8081:8081 -e NODE_ID=002 voltpay-writer``
+   - ``docker start voltpay-writer``
+   - ``docker stop voltpay-writer``
 ## Performance Test Tools 
  - Jmeter 
     - download Binaries: https://jmeter.apache.org/download_jmeter.cgi

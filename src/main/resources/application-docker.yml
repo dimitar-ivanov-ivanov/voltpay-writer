@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: voltpay-writer
+  liquibase:
+    default-schema: write
+  datasource:
+    url: jdbc:postgresql://postgres:5432/write_db
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: HikariCP
+      maximum-pool-size: 50
+  kafka:
+    bootstrap-servers: kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095
+    properties:
+      client:
+        dns:
+          lookup: use_all_dns_ips
+    consumer:
+      group-id: writer-group
+      max-poll-records: 250
+      fetch-max-wait: 500
+      fetch-min-size: 1
+      enable-auto-commit: false
+    listener:
+      type: batch
+
+kafka:
+  dlt:
+    enabled: false
