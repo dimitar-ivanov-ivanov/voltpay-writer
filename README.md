@@ -49,6 +49,7 @@ send emails to the customer that made the successful payment.
   - pgpartman(https://github.com/pgpartman/pg_partman) extension will be used to created and manage partitions, new partitions for the next 2 months will be created at the start of every month
   - For the ID it will be ULID-XXX where XXX is the node ID, even though it's almost impossible to have a collision if we have millions of transactions per secon and hundres of instances of the service it COULD happen theorically
   - Adding the node id ensures that it won't happen as in one process(instance) we are guaranteed to generate unique ULIDs
+  - DBeaver is the chosen app for Database UI
 
 # Liquibase
   - The chosen approach for version control of the database 
