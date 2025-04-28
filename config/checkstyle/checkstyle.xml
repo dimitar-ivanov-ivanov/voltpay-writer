@@ -11,7 +11,6 @@
         <property name="ignorePattern" value="^(\s*)\/\/.*$"/>
     </module>
     <module name="TreeWalker">
-        <!-- Add the rules you want here -->
         <module name="AvoidStarImport"/>
         <module name="ConstantName"/>
         <module name="EmptyBlock"/>

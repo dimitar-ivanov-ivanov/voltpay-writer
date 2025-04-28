@@ -87,10 +87,13 @@ send emails to the customer that made the successful payment.
   - Out of memory errors
 
 # General Stuff
-- Checkstyle is used to enforce standards for code quality
-- use ``gradle checkstyleMain`` to use
-- checkstyle rules can be found in ``config/checkstyle/checkstyle.xml``
-
+- Code Quality
+     - Checkstyle is used to enforce standards for code quality
+     - use ``gradle checkstyleMain`` to use
+     - checkstyle rules can be found in ``config/checkstyle/checkstyle.xml``
+- Functional Tests 
+     - Unit Tests 
+     - Integration Tests
 
 # Other ideas that were considered and DROPPED
 
