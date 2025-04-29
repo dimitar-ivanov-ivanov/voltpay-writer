@@ -1,5 +1,6 @@
-package com.voltpay.voltpay_writer.consumer;
+package com.voltpay.voltpay_writer.unit.consumer;
 
+import com.voltpay.voltpay_writer.consumer.WriteConsumer;
 import com.voltpay.voltpay_writer.pojo.ReadEvent;
 import com.voltpay.voltpay_writer.pojo.WriteEvent;
 import com.voltpay.voltpay_writer.services.WriteService;

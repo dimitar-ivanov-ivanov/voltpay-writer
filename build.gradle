@@ -69,6 +69,12 @@ dependencies {
 	// Kafka
 	implementation("org.springframework.kafka:spring-kafka:3.3.4")
 
+	// test container for Postgres
+	testImplementation("org.testcontainers:postgresql:1.21.0")
+
+	// test container for Kafka
+	testImplementation("org.testcontainers:kafka:1.21.0")
+
 }
 
 tasks.named('test') {

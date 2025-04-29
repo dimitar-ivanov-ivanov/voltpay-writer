@@ -94,7 +94,7 @@ send emails to the customer that made the successful payment.
      - checkstyle rules can be found in ``config/checkstyle/checkstyle.xml``
 - Functional Tests 
      - Unit Tests 
-     - Integration Tests
+     - Integration Tests using Testcontainers
 
 # Other ideas that were considered and DROPPED
 
@@ -192,7 +192,7 @@ send emails to the customer that made the successful payment.
    - ``docker build -t voltpay-writer .``  
    - ``docker compose up -d`` -> the app container depends on the containers in compose to be started
    - ``docker run -d --name voltpay-writer --network general -p 8080:8080 -e NODE_ID=001 voltpay-writer``
-   - [IF WE WANT ANOTEHR INSTANCE] ``docker run -d --name voltpay-writer-2 --network general -p 8081:8081 -e NODE_ID=002 voltpay-writer``
+   - [IF WE WANT ANOTHER INSTANCE] ``docker run -d --name voltpay-writer-2 --network general -p 8081:8081 -e NODE_ID=002 voltpay-writer``
    - ``docker start voltpay-writer``
    - ``docker stop voltpay-writer``
 ## Performance Test Tools 

@@ -1,4 +1,4 @@
-package com.voltpay.voltpay_writer.services;
+package com.voltpay.voltpay_writer.unit.services;
 
 import com.voltpay.voltpay_writer.entities.Idempotency;
 import com.voltpay.voltpay_writer.entities.PaymentCore;
@@ -8,6 +8,8 @@ import com.voltpay.voltpay_writer.pojo.WriteEvent;
 import com.voltpay.voltpay_writer.repositories.PaymentCoreRepository;
 import com.voltpay.voltpay_writer.repositories.PaymentMetadataRepository;
 import com.voltpay.voltpay_writer.repositories.PaymentNotesRepository;
+import com.voltpay.voltpay_writer.services.IdempotencyService;
+import com.voltpay.voltpay_writer.services.WriteService;
 import com.voltpay.voltpay_writer.utils.Currency;
 import com.voltpay.voltpay_writer.utils.TrnStatus;
 import com.voltpay.voltpay_writer.utils.TrnType;

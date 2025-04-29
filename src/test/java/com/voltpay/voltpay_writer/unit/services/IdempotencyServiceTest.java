@@ -1,7 +1,8 @@
-package com.voltpay.voltpay_writer.services;
+package com.voltpay.voltpay_writer.unit.services;
 
 import com.voltpay.voltpay_writer.entities.Idempotency;
 import com.voltpay.voltpay_writer.repositories.IdempotencyRepository;
+import com.voltpay.voltpay_writer.services.IdempotencyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;

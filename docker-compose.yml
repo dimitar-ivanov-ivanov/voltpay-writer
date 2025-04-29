@@ -18,7 +18,7 @@ services:
       - zookeeper-log:/var/lib/zookeeper/log
 
   kafka1:
-    image: confluentinc/cp-kafka:7.4.0
+    image: confluentinc/cp-kafka:7.4.0 # if you update the kafka version, don't forget the update the integration tests too
     hostname: kafka1
     container_name: kafka1
     ports:
@@ -118,7 +118,7 @@ services:
       - kafka4-data:/var/lib/kafka/data
 
   postgres:
-    image: postgres:16
+    image: postgres:16 # if you update postgres version, don't forget the update the integration tests too
     container_name: postgres
     environment:
       POSTGRES_DB: write_db
