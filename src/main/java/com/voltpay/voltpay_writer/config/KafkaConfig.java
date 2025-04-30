@@ -20,7 +20,9 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,9 @@ public class KafkaConfig {
 
     @Value("${spring.kafka.consumer.fetch-max-wait}")
     private Integer maxFetchWaitInMs;
+
+    @Value("${spring.kafka.consumer.threads}")
+    private Integer consumerThreads;
 
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
@@ -72,7 +77,14 @@ public class KafkaConfig {
         // Commit once for the whole batch to ensure better performance
         // Also no need to manual commits to Kafka
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.BATCH);
-        factory.setConcurrency(50); // Number of threads to process messages
+        factory.setConcurrency(consumerThreads); // Number of threads to process messages
+
+        // Retry configuration
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(
+            new FixedBackOff(500L, 1L) // 1 retry after 500ms
+        );
+
+        factory.setCommonErrorHandler(errorHandler);
         return factory;
     }
 

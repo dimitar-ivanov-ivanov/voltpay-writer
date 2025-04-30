@@ -95,6 +95,7 @@ send emails to the customer that made the successful payment.
 - Functional Tests 
      - Unit Tests 
      - Integration Tests using Testcontainers
+       - there is a separate init.sql file for creating schema and tables, so we avoid having to setup pgpartman extension in the test container 
 
 # Other ideas that were considered and DROPPED
 

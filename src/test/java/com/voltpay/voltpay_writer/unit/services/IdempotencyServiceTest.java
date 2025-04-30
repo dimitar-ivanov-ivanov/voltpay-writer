@@ -5,9 +5,9 @@ import com.voltpay.voltpay_writer.repositories.IdempotencyRepository;
 import com.voltpay.voltpay_writer.services.IdempotencyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,10 +31,11 @@ class IdempotencyServiceTest {
         // GIVEN
         Idempotency idempotency = new Idempotency("id", LocalDate.now());
 
-        when(repo.insertNew(idempotency.getId(), idempotency.getDate()))
-                .thenThrow(DataIntegrityViolationException.class);
+        when(repo.findById(idempotency.getId()))
+                .thenReturn(Optional.of(idempotency));
         // WHEN
         boolean isInserted = service.insert(idempotency);
+
         // THEN
         assertFalse(isInserted);
     }
@@ -44,8 +45,11 @@ class IdempotencyServiceTest {
         // GIVEN
         Idempotency idempotency = new Idempotency("id", LocalDate.now());
 
-        when(repo.insertNew(idempotency.getId(), idempotency.getDate()))
-                .thenReturn(1);
+        when(repo.findById(idempotency.getId()))
+            .thenReturn(Optional.empty());
+
+        when(repo.save(idempotency))
+                .thenReturn(idempotency);
 
         // WHEN
         boolean isInserted = service.insert(idempotency);

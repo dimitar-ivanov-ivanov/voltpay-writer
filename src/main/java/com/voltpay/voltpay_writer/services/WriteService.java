@@ -17,6 +17,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,6 +39,15 @@ public class WriteService {
     @Autowired
     private final KafkaTemplate<String, WriteEvent> deadLetterTemplate;
 
+    /**
+     * Responsible for persisting changes to the DB or sending them to dead letter IF they fail.
+     * This method reuses the transaction that is started in {@link com.voltpay.voltpay_writer.consumer.WriteConsumer}
+     *
+     * @param custId cust id which all event share
+     * @param events data to be persisted
+     * @param processedEvents a list which we fill with events that we processed
+     */
+    @Transactional
     public void write(Long custId, List<ConsumerRecord<String, WriteEvent>> events, List<ReadEvent> processedEvents) {
 
         for (ConsumerRecord<String, WriteEvent> event: events) {
@@ -50,7 +60,8 @@ public class WriteService {
 
             // IF idempotency throws unique constraint we're trying to reprocess a message -> disregard
             if (!insertedIdempotency) {
-                return;
+                log.info("Message {} already processed, skipping", messageId);
+                continue;
             }
 
             String ulid = UlidGenerator.generateUlid();

@@ -23,6 +23,7 @@ spring:
       fetch-max-wait: 500
       fetch-min-size: 1
       enable-auto-commit: false
+      threads: 50
     listener:
       type: batch
 

@@ -3,16 +3,21 @@ spring:
     name: voltpay-writer
   liquibase:
     default-schema: write
+    enabled: true
+    change-log: classpath:/db/changelog-root.yaml
   datasource:
-    url: jdbc:postgresql://postgres:5432/write_db
+    url: jdbc:postgresql://localhost:5432/write_db
     username: user
     password: password
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: HikariCP
       maximum-pool-size: 50
+  jpa:
+    properties:
+      hibernate.default_schema: write
   kafka:
-    bootstrap-servers: kafka1:29092,kafka2:29093,kafka3:29094,kafka4:29095
+    bootstrap-servers: localhost:9092,localhost:9093,localhost:9094,localhost:9095
     properties:
       client:
         dns:
@@ -23,7 +28,7 @@ spring:
       fetch-max-wait: 500
       fetch-min-size: 1
       enable-auto-commit: false
-      threads: 50
+      threads: 1
     listener:
       type: batch
 

@@ -8,7 +8,7 @@ public class UlidGenerator {
 
     // Extracting this outside of the method, otherwise we'll call it for every ULID
     // There is no caching so we'll get the env variable every time
-    private static final String NODE_ID = System.getenv("NODE_ID");
+    private static String NODE_ID = System.getenv("NODE_ID");
 
     private UlidGenerator() {
         // no instances

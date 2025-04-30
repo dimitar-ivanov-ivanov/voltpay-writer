@@ -19,9 +19,15 @@ public class DeadLetterConsumer {
     @Autowired
     private final KafkaTemplate<String, WriteEvent> kafkaTemplate;
 
+    /**
+     * Consumer for the dead letter topic.
+     * It is enabled manually via kafka.dlt.enabled property.
+     * Its responsibility is to re-emit the event to the original topic.
+     *
+     * @param records events to be re-emitted
+     */
     @KafkaListener(topics = "write-topic-dlt", containerFactory = "kafkaListenerContainerFactory")
     public void reprocessEvent(List<ConsumerRecord<String, WriteEvent>> records) {
-        // Re-emit to the original topic
         for(ConsumerRecord<String, WriteEvent> record: records) {
             kafkaTemplate.send("write-topic", record.key(), record.value());
         }
