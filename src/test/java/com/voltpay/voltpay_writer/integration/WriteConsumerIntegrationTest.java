@@ -99,6 +99,7 @@ public class WriteConsumerIntegrationTest {
         props.put("bootstrap.servers", kafka.getBootstrapServers());
 
         try (AdminClient adminClient = AdminClient.create(props)) {
+            // Topic name - partitions - retention
             NewTopic writeTopic = new NewTopic("write-topic", 1, (short) 1);
             NewTopic readTopic = new NewTopic("read-topic", 1, (short) 1);
             NewTopic writeDltTopic = new NewTopic("write-topic-dlt", 1, (short) 1);
@@ -138,7 +139,7 @@ public class WriteConsumerIntegrationTest {
     }
 
     @Test
-    public void given_duplicateIdempotency_when_processBatchOfMessages_then_doNotProcess() {
+    public void given_batchWithDuplicateEvents_when_processBatchOfMessages_then_processOnlyOneEvent() {
         // GIVEN
         String messageId = "msg:1";
         WriteEvent writeEvent = getWriteEvent(messageId);
@@ -147,7 +148,8 @@ public class WriteConsumerIntegrationTest {
         kafkaTemplate.send("write-topic", CUST_ID.toString(), writeEvent);
         kafkaTemplate.send("write-topic", CUST_ID.toString(), writeEvent);
 
-        // THEN
+        // THEN wait 10 second total to assert, every 2 second we try to do the assertions again
+        // CONSIDER increasing timeout when debugging
         await()
             .atMost(10, TimeUnit.SECONDS)
             .pollInterval(2, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -163,7 +165,6 @@ public class WriteConsumerIntegrationTest {
                 assertEquals(1, notes.size());
             });
     }
-
 
     @Test
     public void given_validInput_when_processBatchOfMessages_then_processBatch() {

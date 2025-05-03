@@ -41,13 +41,15 @@ select count(*) from write.payment_core pc where id = '01JSGH8Y62QAHP5FTW4S9S3FZ
 
 select count(*) from write.payment_core
 
-select * from write.payment_core
+select * from write.payment_core where id = '01JT2XQPGQ7EMEWJ633AXKN3S8-001'
 
 select * from write.payment_metadata pm;
 
 select * from write.payment_notes pt;
 
 select count(*) from write.idempotency i ;
+
+select * from write.idempotency i where id = '7bb5bb0b-4dfa-4c66-a919-f11d1b23b81e0000'
 
 truncate write.payment_core;
 truncate write.payment_metadata;
