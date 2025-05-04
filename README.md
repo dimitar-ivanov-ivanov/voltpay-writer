@@ -12,11 +12,9 @@ There is an idempotency check every time we try to process a message to ensure w
 The reprocessing can happen because of rebalancing, restarts, retries etc.
 There is an idempotency job that deletes idempotency records older than one week.
 Kafka consumer should consume messages in batches and we do ONE DB commit for the entire batch, also we do ONE OFFSET Commit/acknowledgement to Kafka.
-After successful write publish to payment_email topic which will be consumed by payment email service and it will
-send emails to the customer that made the successful payment.
 
 # Architecture
-![img_2.png](img_2.png)
+![architecture.png](architecture.png)
 # Kafka 
   - Consume messages from payment_writer_topic.
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
