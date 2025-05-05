@@ -1,5 +1,11 @@
 create schema write;
 
+CREATE SCHEMA IF NOT EXISTS partman;
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA partman;
+
+CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
+
 SELECT * FROM pg_available_extensions WHERE name = 'pg_partman';
 
 SELECT tablename FROM pg_tables WHERE tablename LIKE '%payment%';
