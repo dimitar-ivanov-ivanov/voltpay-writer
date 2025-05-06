@@ -12,6 +12,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class IdempotencyServiceTest {
@@ -43,7 +44,7 @@ class IdempotencyServiceTest {
     @Test
     public void given_validInput_when_insert_then_insertSuccessfully() {
         // GIVEN
-        Idempotency idempotency = new Idempotency("id", LocalDate.now());
+        Idempotency idempotency = new Idempotency("id2", LocalDate.now());
 
         when(repo.findById(idempotency.getId()))
             .thenReturn(Optional.empty());
@@ -56,5 +57,15 @@ class IdempotencyServiceTest {
 
         // THEN
         assertTrue(isInserted);
+    }
+
+    @Test
+    public void given_recordToDelete_when_deleteIdempotency_then_delete() {
+        // GIVEN
+        Idempotency idempotency = new Idempotency("id3", LocalDate.now());
+        // WHEN
+        service.deleteIdempotency(idempotency);
+        // THEN
+        verify(repo).delete(idempotency);
     }
 }
