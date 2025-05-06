@@ -5,7 +5,7 @@ This is an experiment for me to try to make a system that writes 100K transactio
 The reading logic is offloaded to a separate service to ensure that there is no contention for CPU/Resources 
 between reading and writing, so both are in separate services and can independently scaled and deployed.
 Neither of these microservices know of each other's existence as they communicate through Kafka topic.
-Writer writes to payment_read_topic after we have commited successfully changes to the Writer DB.
+Writer writes to read-topic after we have commited successfully changes to the Writer DB.
 This means that the Writer does NOT wait for the Reader to persist the changes, so if you write and after 
 1 nanosecond try to read the data you probably can't as the data for reading is eventually consistent.
 There is an idempotency check every time we try to process a message to ensure we don't reprocessed already processed messages.
@@ -16,10 +16,10 @@ Kafka consumer should consume messages in batches and we do ONE DB commit for th
 # Architecture
 ![architecture.png](architecture.png)
 # Kafka 
-  - Consume messages from payment_writer_topic.
+  - Consume messages from write-topic.
   - Check for idempotency of the message, just in case some messages are re-emitted OR the consumer offset gets moved back
   - The topic has 100 partitions with 2 replicas and 1 day retention
-  - There are 2 Kafka brokers as a start, more can be added in the future
+  - There are 4 Kafka brokers as a start, more can be added in the future
   - In the perf project there is an API for producing warmup events, very important to do before testing to ensure no performance degradation during big loads.
   - If there are no warmup events during the first performance test the results are disastrous, it was 330 tps, on the third run it was 3300.
   - The MESSAGE_ID of the messages is the ACCOUNT_ID which ensures transactions for one account are written sequentially so NO race conditions as all of the messages for that ACCOUND_ID go into one partition and processing for a single partition is sequential.

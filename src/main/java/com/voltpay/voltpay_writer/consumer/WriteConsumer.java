@@ -79,7 +79,7 @@ public class WriteConsumer {
 
     private void publishEventsToReadTopic(List<ReadEvent> successfulEvents) {
         for (ReadEvent event: successfulEvents) {
-            readEventKafkaTemplate.send("read-topic", event.getMessageId(), event);
+            readEventKafkaTemplate.send("read-topic", event.getCustId().toString(), event);
         }
     }
 

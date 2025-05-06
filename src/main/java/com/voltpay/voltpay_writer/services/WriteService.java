@@ -106,6 +106,7 @@ public class WriteService {
                         .custId(custId)
                         .comment(value.getComment())
                         .amount(value.getAmount())
+                        .currency(value.getCurrency())
                         .build();
 
                 processedEvents.add(readEvent);
