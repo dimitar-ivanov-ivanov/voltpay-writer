@@ -24,6 +24,7 @@ spring:
       fetch-min-size: 1
       enable-auto-commit: false
       threads: 50
+      deadLetterThreads: 4
     listener:
       type: batch
 

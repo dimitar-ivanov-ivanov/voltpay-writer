@@ -55,7 +55,9 @@ select * from write.payment_notes pt;
 
 select count(*) from write.idempotency i ;
 
-select * from write.idempotency i where id = '7bb5bb0b-4dfa-4c66-a919-f11d1b23b81e0000'
+-- successful -> d27a6dc7-e679-49a0-8926-e82326f44b87
+-- failed -> c5f10fb1-5797-4294-9d5f-d1787060594a, 974ff56a-9b4a-4b3d-b3dc-812dd8e63d7e 3e772b8b-2e21-4dac-89f0-55eb802fc0e8 426d9c45-8b1d-4a5a-9ad1-bb39937d54be
+select * from write.idempotency i where id = '426d9c45-8b1d-4a5a-9ad1-bb39937d54be'
 
 truncate write.payment_core;
 truncate write.payment_metadata;

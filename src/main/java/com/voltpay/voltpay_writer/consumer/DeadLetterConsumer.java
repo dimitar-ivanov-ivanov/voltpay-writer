@@ -2,7 +2,7 @@ package com.voltpay.voltpay_writer.consumer;
 
 import com.voltpay.voltpay_writer.pojo.WriteEvent;
 import lombok.AllArgsConstructor;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,6 +14,7 @@ import java.util.List;
 @Service
 @ConditionalOnProperty(name = "kafka.dlt.enabled", havingValue = "true")
 @AllArgsConstructor
+@Slf4j
 public class DeadLetterConsumer {
 
     @Autowired
@@ -24,12 +25,14 @@ public class DeadLetterConsumer {
      * It is enabled manually via kafka.dlt.enabled property.
      * Its responsibility is to re-emit the event to the original topic.
      *
-     * @param records events to be re-emitted
+     * @param events events to be re-emitted
      */
-    @KafkaListener(topics = "write-topic-dlt", containerFactory = "kafkaListenerContainerFactory")
-    public void reprocessEvent(List<ConsumerRecord<String, WriteEvent>> records) {
-        for(ConsumerRecord<String, WriteEvent> record: records) {
-            kafkaTemplate.send("write-topic", record.key(), record.value());
+    @KafkaListener(topics = "write-topic-dlt", containerFactory = "deadLetterListenerContainerFactory")
+    public void reprocessEvent(List<WriteEvent> events) {
+        for(WriteEvent event: events) {
+            log.info("Attempting to produce message {} to write-topic for reprocessing.", event.getMessageId());
+            kafkaTemplate.send("write-topic", event.getCustId().toString(), event);
+            log.info("Successfully produced message {}", event.getMessageId());
         }
     }
 }

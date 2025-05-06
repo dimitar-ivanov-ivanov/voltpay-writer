@@ -64,11 +64,12 @@ public class WriteService {
                 continue;
             }
 
-            String ulid = UlidGenerator.generateUlid();
-            LocalDateTime createdAt = LocalDateTime.now();
-            PrimaryKey primaryKey = new PrimaryKey(ulid, createdAt);
+            try {
+                String ulid = UlidGenerator.generateUlid();
+                LocalDateTime createdAt = LocalDateTime.now();
+                PrimaryKey primaryKey = new PrimaryKey(ulid, createdAt);
 
-            PaymentCore core = PaymentCore.builder()
+                PaymentCore core = PaymentCore.builder()
                     .id(primaryKey)
                     .type(value.getType())
                     .amount(value.getAmount())
@@ -77,20 +78,19 @@ public class WriteService {
                     .currency(value.getCurrency())
                     .build();
 
-            Integer version = 1; //TODO: get previous version if its update
+                Integer version = 1; //TODO: get previous version if its update
 
-            PaymentMetadata metadata = PaymentMetadata.builder()
+                PaymentMetadata metadata = PaymentMetadata.builder()
                     .id(primaryKey)
                     .version(version)
                     .updatedAt(createdAt) //TODO: if it's an update on existing record update it
                     .build();
 
-            PaymentNotes note = PaymentNotes.builder()
+                PaymentNotes note = PaymentNotes.builder()
                     .id(primaryKey)
                     .comment(value.getComment())
                     .build();
 
-            try {
                 paymentCoreRepository.save(core);
                 paymentMetadataRepository.save(metadata);
                 paymentNotesRepository.save(note);
@@ -111,6 +111,10 @@ public class WriteService {
                 processedEvents.add(readEvent);
             } catch (Exception ex) {
                 log.error("Exception during processing event {}. Sending to Dead Letter.", messageId);
+                // if we throw an exception while persisting payment entities, we need to remove
+                // the persisted idempotency, as the transaction won't fail and roll it back.
+                // Otherwise, when we try to reprocess the failed events they will fail, because the idempotency exists.
+                idempotencyService.deleteIdempotency(idempotency);
                 sendToDeadLetter(key, value);
             }
         }

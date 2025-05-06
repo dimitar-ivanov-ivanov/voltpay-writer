@@ -38,4 +38,12 @@ public class IdempotencyService {
             return false;
         }
     }
+
+    public void deleteIdempotency(Idempotency idempotency) {
+        try {
+            idempotencyRepository.delete(idempotency);
+        } catch (Exception ex) {
+            log.warn("Couldn't delete idempotency {}. It has to be manually deleted.", idempotency.getId());
+        }
+    }
 }

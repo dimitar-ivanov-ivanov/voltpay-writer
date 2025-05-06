@@ -14,8 +14,6 @@ import static org.mockito.Mockito.verify;
 
 class DeadLetterConsumerTest {
 
-    private static final String INPUT_TOPIC = "write-topic-dlt";
-
     private static final String OUTPUT_TOPIC = "write-topic";
 
     private KafkaTemplate<String, WriteEvent> kafkaTemplate;
@@ -31,12 +29,13 @@ class DeadLetterConsumerTest {
     @Test
     public void given_eventToReprocess_when_reprocessEvent_then_reprocessSuccessfully() {
         // GIVEN
-        String key = "key";
-        WriteEvent value = new WriteEvent();
-        ConsumerRecord<String, WriteEvent> record = new ConsumerRecord<>(INPUT_TOPIC, 1, 1, key, value);
+        Long custId = 100L;
+        WriteEvent event = new WriteEvent();
+        event.setCustId(custId);
+
         // WHEN
-        consumer.reprocessEvent(List.of(record));
+        consumer.reprocessEvent(List.of(event));
         // THEN
-        verify(kafkaTemplate).send(OUTPUT_TOPIC, key, value);
+        verify(kafkaTemplate).send(OUTPUT_TOPIC, custId.toString(), event);
     }
 }

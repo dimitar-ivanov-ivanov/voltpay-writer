@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @AllArgsConstructor
+// If Dead Letter consumption is enabled the Write Consumer should be disabled otherwise we could end up in an infinite loop of
+// Write Consumer -> publish to DLT -> DLT publish to Write Consumer -> continue until we run out of memory
+@ConditionalOnProperty(name = "kafka.dlt.enabled", havingValue = "false")
 public class WriteConsumer {
 
     private static final List<Integer> STATUS_VALUES = Arrays.stream(TrnStatus.values()).map(TrnStatus::getValue).toList();
