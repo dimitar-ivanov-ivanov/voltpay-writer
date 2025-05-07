@@ -101,7 +101,7 @@ class WriteConsumerTest {
 
         String messageId = "1312312";
         ReadEvent readEvent = new ReadEvent();
-        readEvent.setMessageId(messageId);
+        readEvent.setCustId(CUST_ID);
 
         doAnswer(invocation -> {
             List<ReadEvent> processedEvents = invocation.getArgument(2);
@@ -113,7 +113,7 @@ class WriteConsumerTest {
         consumer.processBatchOfMessages(List.of(record));
 
         // THEN
-        verify(readEventKafkaTemplate).send("read-topic", messageId, readEvent);
+        verify(readEventKafkaTemplate).send("read-topic", CUST_ID.toString(), readEvent);
         verify(transactionManager).commit(any());
     }
 

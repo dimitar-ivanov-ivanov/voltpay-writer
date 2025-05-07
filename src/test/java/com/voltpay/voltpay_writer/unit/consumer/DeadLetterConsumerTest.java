@@ -2,7 +2,6 @@ package com.voltpay.voltpay_writer.unit.consumer;
 
 import com.voltpay.voltpay_writer.consumer.DeadLetterConsumer;
 import com.voltpay.voltpay_writer.pojo.WriteEvent;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.KafkaTemplate;
